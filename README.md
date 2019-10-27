@@ -18,7 +18,7 @@ Currently supports searchs over:
 To install, follow these instructions:
 
 1.  Inside Foundry, select the Game Modules tab in the Configuration and Setup menu.
-2.  Click the Install Module button and enter the following URL: https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module.json
+2.  Click the Install Module button and enter the following URL: https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json
 3.  Click Install and wait for installation to complete
 
 ## Usage Instructions
