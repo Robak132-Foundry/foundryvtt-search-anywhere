@@ -1,0 +1,22 @@
+image: python:3-alpine
+
+before_script:
+  - apk update
+  - apk add zip
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - zip search-anywhere.zip -r module -x ".*"
+  artifacts:
+    name: search-anywhere
+    when: on_success
+    paths:
+      - search-anywhere.zip
+  when: on_success
+  only:
+    - tags
+    - master

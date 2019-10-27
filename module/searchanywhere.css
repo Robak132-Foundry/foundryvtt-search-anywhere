@@ -1,0 +1,61 @@
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9998;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%; 
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  border: 1px solid #888;
+  width: 40%;
+}
+
+.modal-content input[type=text] {
+  padding: 15px;
+  font-family: "Signika", "Palatino Linotype", serif;
+  font-size: 18px;
+  border: none;
+  width: 100%;
+  background: white;
+}
+
+.autocomplete-suggestions { 
+  border: 1px solid #999; 
+  background: #FFF; 
+  overflow: auto; 
+}
+
+.autocomplete-suggestion { 
+  padding: 10px; f
+  font-family: "Signika", "Palatino Linotype", serif;
+  font-size: 18px;
+  white-space: nowrap; 
+  overflow: hidden; 
+}
+
+.autocomplete-selected { 
+  background: #F0F0F0; 
+}
+
+.autocomplete-suggestions strong { 
+  font-weight: normal; 
+  color: #ef5f1e; 
+}
+
+.autocomplete-group { 
+  padding: 2px 5px; 
+}
+
+.autocomplete-group strong { 
+  display: block; 
+  border-bottom: 1px solid #000; 
+}

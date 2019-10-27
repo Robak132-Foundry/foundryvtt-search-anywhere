@@ -1,0 +1,17 @@
+{
+	"name": "searchanywhere",
+	"title": "Search Anywhere",
+	"description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
+	"version": "1.0",
+	"author": "Simone",
+	"scripts": [
+		"./jquery.autocomplete.js",
+		"./searchanywhere.js"
+	],
+	"styles": [
+		"./searchanywhere.css"
+	],
+	"url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
+	"manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
+	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/master/raw/search-anywhere.zip"
+}
