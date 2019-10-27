@@ -11,7 +11,23 @@ Currently supports searchs over:
 *  Rollable tables
 *  Compendium
 
-License
+## Installation
+
+To install, follow these instructions:
+
+1.  Inside Foundry, select the Game Modules tab in the Configuration and Setup menu.
+2.  Click the Install Module button and enter the following URL: https://gitlab.com/hooking/foundry-vtt---loot-sheet-npc/raw/master/module.json
+3.  Click Install and wait for installation to complete
+
+## Compatibility
+
+Tested on 0.3.9 version.
+
+## Feedback
+
+If you have any suggestions or feedback, please contact me on discord (Simone#6710)
+
+## License
 
 FoundryVTT Search Anywhere - a module for Foundry VTT - by Simone is licensed under a Creative Commons Attribution 4.0 International License.
 
