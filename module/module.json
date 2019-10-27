@@ -13,5 +13,5 @@
 	],
 	"url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
 	"manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
-	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/master/raw/search-anywhere.zip"
+	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/master/raw/search-anywhere.zip?job=build"
 }
