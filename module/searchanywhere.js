@@ -54,7 +54,8 @@ Hooks.on('init', () => {
                         return suggestion.match(query);
                     })
                 });
-            }).catch(unused => {
+            }).catch(err => {
+                console.error(`Unable fetch compendium indexes: ${err}`);
             });
         },
 
@@ -133,7 +134,11 @@ class CompendiumSuggestionData {
     }
 
     render() {
-        this.pack.getEntity(this.entry.id).then(entity => entity.sheet.render(true));
+        this.pack.getEntity(this.entry.id)
+            .then(entity => entity.sheet.render(true))
+            .catch(err => {
+                console.error(`Unable render compendium entity sheet: ${err}`);
+            });
     }
 
 }
