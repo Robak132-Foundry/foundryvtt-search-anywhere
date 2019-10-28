@@ -100,7 +100,7 @@ class EntitySuggestionData {
     }
 
     match(query) {
-        return this.entity.visible() && this.entity.name.toLowerCase().includes(query.toLowerCase());
+        return this.entity.visible && this.entity.name.toLowerCase().includes(query.toLowerCase());
     }
 
     render() {
