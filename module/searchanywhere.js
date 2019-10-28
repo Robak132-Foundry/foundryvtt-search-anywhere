@@ -29,7 +29,7 @@ Hooks.on('init', () => {
         }
     };
 
-    $('#autocomplete').autocomplete({
+    $('#search-anywhere-autocomplete').autocomplete({
         lookup: function (query, done) {
             Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
 
