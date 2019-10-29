@@ -4,10 +4,12 @@ Hooks.on('init', () => {
     let searchField = new AutoCompletionField();
 
     document.onkeydown = function (evt) {
-        if (evt.ctrlKey && evt.keyCode === 32) {
+        if (evt.ctrlKey && evt.keyCode === 32 && !searchField.visible) {
+            evt.stopPropagation();
             searchField.show();
         }
-        if (evt.key === "Escape") {
+        if (evt.key === "Escape" && searchField.visible) {
+            evt.stopPropagation();
             searchField.hide();
         }
     };
@@ -44,6 +46,7 @@ class AutoCompletionField {
         this.input = document.getElementById('search-anywhere-autocomplete');
 
         this.suggestions = [];
+        this.visible = false;
 
         let me = this;
 
@@ -96,6 +99,7 @@ class AutoCompletionField {
             this.modal.style.display = "block";
             this.input.value = '';
             this.input.focus();
+            this.visible = true;
 
         }).catch(err => {
             console.error(`Unable fetch compendium indexes: ${err}`);
@@ -108,6 +112,7 @@ class AutoCompletionField {
     hide() {
         this.suggestions = [];
         this.modal.style.display = "none";
+        this.visible = false;
     }
 
 }
