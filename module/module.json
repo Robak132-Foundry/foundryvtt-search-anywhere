@@ -2,7 +2,7 @@
 	"name": "searchanywhere",
 	"title": "Search Anywhere",
 	"description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
-	"version": "1.0.2",
+	"version": "1.1",
 	"author": "Simone",
 	"scripts": [
 		"./jquery.autocomplete.js",

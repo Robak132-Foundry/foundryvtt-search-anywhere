@@ -59,3 +59,15 @@
   display: block; 
   border-bottom: 1px solid #000; 
 }
+
+.window-draggable-handle {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  bottom: -1px;
+  background: #444;
+  padding: 2px;
+  border: 1px solid #111;
+  left: 0;
+  border-radius: 0 4px 0 0;
+}

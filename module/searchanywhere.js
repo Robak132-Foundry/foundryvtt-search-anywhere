@@ -1,7 +1,7 @@
 
 Hooks.on('init', () => {
 
-    let searchField = new AutoCompletionField();
+    const searchField = new AutoCompletionField();
 
     document.onkeydown = function (evt) {
         if (evt.ctrlKey && evt.keyCode === 32 && !searchField.visible) {
@@ -19,7 +19,30 @@ Hooks.on('init', () => {
             searchField.hide();
         }
     };
+
 });
+
+Hooks.on('ready', () => {
+
+    collectSheets(CONFIG.Actor).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Actor'));
+    collectSheets(CONFIG.Item).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Item'));
+    new DragHandler('renderJournalSheet', 'JournalEntry');
+});
+
+collectSheets = function(entityType) {
+    let sheetClasses = [];
+    const entities = Object.values(entityType.sheetClasses);
+    for (let entity of entities) {
+        const entitySheets = Object.values(entity);
+        for (let sheet of entitySheets) {
+            const sheetClass = sheet.id.split(".")[1];
+            if(!sheetClasses.includes(sheetClass)) {
+                sheetClasses.push(sheetClass);
+            }
+        }
+    }
+    return sheetClasses;
+};
 
 const SUGGESTION_ICON_TYPES = {
     "ACTOR": 'fas fa-users',
@@ -30,17 +53,60 @@ const SUGGESTION_ICON_TYPES = {
     "COMPENDIUM": 'fas fa-atlas'
 };
 
+class DragHandler {
+
+    constructor(hook, type, query) {
+        console.log(`hook ${hook}`);
+        Hooks.on(hook, this.handle.bind(this));
+        this.type = type;
+    }
+
+    handle(app, html, data) {
+
+        const handle = $(
+            `<div class="window-draggable-handle">
+                <i class="fas fa-hand-rock" draggable="true"></i>
+            </div>`
+        );
+
+        const header = html.parent().parent().find(".window-header");
+        header.after(handle);
+
+        const img = handle.find('i')[0];
+        img.addEventListener('dragstart', evt => {
+            evt.stopPropagation();
+            let toTransfer;
+            if(data.options.compendium) {
+                let pack = game.packs.find(p => p.collection === data.options.compendium);
+                toTransfer = {
+                    type: pack.entity,
+                    pack: pack.collection,
+                    id: data.entity._id
+                };
+            } else {
+                toTransfer = {
+                    type: this.type,
+                    id: data.entity._id
+                };
+            }
+
+            evt.dataTransfer.setData("text/plain", JSON.stringify(toTransfer));
+        }, false);
+    }
+}
+
 class AutoCompletionField {
 
     constructor() {
-        let modalHtml =
+        const modalHtml = $(
             '<div id="search-anywhere-modal" class="modal">' +
                 '<div class="modal-content">' +
                     '<input id="search-anywhere-autocomplete" type="text" placeholder="Search...">' +
                 '</div>' +
-            '</div>';
+            '</div>'
+        );
 
-        $(modalHtml).appendTo($('body'));
+        modalHtml.appendTo($('body'));
 
         this.modal = document.getElementById('search-anywhere-modal');
         this.input = document.getElementById('search-anywhere-autocomplete');
@@ -176,8 +242,14 @@ class CompendiumSuggestionData {
     }
 
     render() {
+        console.log(this.pack);
         this.pack.getEntity(this.entry.id)
-            .then(entity => entity.sheet.render(true))
+            .then(entity => {
+                const sheet = entity.sheet;
+                sheet.options.editable = false;
+                sheet.options.compendium = this.pack.collection;
+                sheet.render(true);
+            })
             .catch(err => {
                 console.error(`Unable render compendium entity sheet: ${err}`);
             });
