@@ -81,12 +81,12 @@ class DragHandler {
                 toTransfer = {
                     type: pack.entity,
                     pack: pack.collection,
-                    id: data.entity._id
+                    id: data.actor._id
                 };
             } else {
                 toTransfer = {
                     type: this.type,
-                    id: data.entity._id
+                    id: data.actor._id
                 };
             }
 
