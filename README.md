@@ -13,6 +13,13 @@ Currently supports searchs over:
 *  Rollable tables
 *  Compendium
 
+## From version 1.1: Added the ability to drag the entity directly from the window!
+
+The module adds a small drag handler in the lower left corner of the window that allows to drag and drop directly from the opened sheet.
+
+![Preview](/preview-1.1..gif?raw=true)
+
+
 ## Installation
 
 To install, follow these instructions:
