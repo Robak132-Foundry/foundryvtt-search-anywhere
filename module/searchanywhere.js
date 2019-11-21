@@ -138,6 +138,20 @@ class AutoCompletionField {
                 me.hide();
             }
         });
+
+        this.input.addEventListener('keydown', evt => {
+            if(evt.key === 'Enter') {
+                let [command, match] = ChatLog.parse(this.input.value);
+                if(match) {
+                    ui.chat._processMessageData(this.input.value).then(() => {
+                        this.hide();
+                    }).catch(error => {
+                        ui.notifications.error(error);
+                        throw error;
+                    });
+                }
+            }
+        });
     }
 
     /**
