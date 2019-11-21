@@ -252,7 +252,7 @@ class CompendiumSuggestionData {
     }
 
     match(query) {
-        return game.user.permission >= USER_PERMISSIONS.GAMEMASTER && this.entry.name.toLowerCase().includes(query.toLowerCase());
+        return game.user.isGM && this.entry.name.toLowerCase().includes(query.toLowerCase());
     }
 
     render() {
