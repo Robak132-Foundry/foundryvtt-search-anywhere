@@ -26,10 +26,7 @@ Hooks.on('init', () => {
         name: 'Keymap',
         hint: 'Enter the keymap used to display the search bar',
         type: window.Azzu.SettingsTypes.KeyBinding,
-        default: window.Azzu.SettingsTypes.KeyBinding.format({
-            key: '',
-            ctrlKey: true
-        }),
+        default: 'Ctrl + ',
         scope: 'client',
         config: true
     });
