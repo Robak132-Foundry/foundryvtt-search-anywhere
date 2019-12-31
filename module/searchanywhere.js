@@ -4,7 +4,9 @@ Hooks.on('init', () => {
     const searchField = new AutoCompletionField();
 
     document.onkeydown = function (evt) {
-        if (evt.ctrlKey && evt.keyCode === 32 && !searchField.visible) {
+        const stringValue = game.settings.get('searchanywhere', 'settingKey');
+        const parsedValue = window.Azzu.SettingsTypes.KeyBinding.parse(stringValue);
+        if (window.Azzu.SettingsTypes.KeyBinding.eventIsForBinding(evt, parsedValue)) {
             evt.stopPropagation();
             searchField.show();
         }
@@ -20,6 +22,17 @@ Hooks.on('init', () => {
         }
     };
 
+    game.settings.register('searchanywhere', 'settingKey', {
+        name: 'Keymap',
+        hint: 'Enter the keymap used to display the search bar',
+        type: window.Azzu.SettingsTypes.KeyBinding,
+        default: window.Azzu.SettingsTypes.KeyBinding.format({
+            key: '',
+            ctrlKey: true
+        }),
+        scope: 'client',
+        config: true
+    });
 });
 
 Hooks.on('ready', () => {
@@ -56,7 +69,6 @@ const SUGGESTION_ICON_TYPES = {
 class DragHandler {
 
     constructor(hook, type, query) {
-        console.log(`hook ${hook}`);
         Hooks.on(hook, this.handle.bind(this));
         this.type = type;
     }
@@ -81,12 +93,12 @@ class DragHandler {
                 toTransfer = {
                     type: pack.entity,
                     pack: pack.collection,
-                    id: data.actor._id
+                    id: this.type === 'Actor' ? data.actor._id : data.entity._id
                 };
             } else {
                 toTransfer = {
                     type: this.type,
-                    id: data.actor._id
+                    id: this.type === 'Actor' ? data.actor._id : data.entity._id
                 };
             }
 
@@ -151,6 +163,19 @@ class AutoCompletionField {
                     });
                 }
             }
+        });
+
+        Hooks.on('renderSceneControls', (controls, html) => {
+            const searchBtn = $(
+                `<li class="scene-control">
+                    <i class="fas fa-search"></i>
+                </li>`
+            );
+            html.append(searchBtn);
+            searchBtn[0].addEventListener('click', evt => {
+                evt.stopPropagation();
+                this.show();
+            });
         });
     }
 
@@ -256,7 +281,6 @@ class CompendiumSuggestionData {
     }
 
     render() {
-        console.log(this.pack);
         this.pack.getEntity(this.entry.id)
             .then(entity => {
                 const sheet = entity.sheet;
