@@ -2,8 +2,8 @@
 	"name": "searchanywhere",
 	"title": "Search Anywhere",
 	"description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
-	"version": "1.3",
-	"minimumCoreVersion" : "0.4.0",
+	"version": "1.4",
+	"minimumCoreVersion" : "0.4.5",
 	"author": "Simone",
 	"scripts": [
 		"./jquery.autocomplete.js",

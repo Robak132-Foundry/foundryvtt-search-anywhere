@@ -274,7 +274,7 @@ class CompendiumSuggestionData {
     }
 
     match(query) {
-        return game.user.isGM && this.entry.name.toLowerCase().includes(query.toLowerCase());
+        return (game.user.isGM || this.pack.public) && this.entry.name.toLowerCase().includes(query.toLowerCase());
     }
 
     render() {
