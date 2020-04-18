@@ -1,15 +1,50 @@
 /**
- * settings-extender version 1.0.1
- *
  * window.Azzu.SettingsTypes is guaranteed to be initialized on document.ready
  * window.Azzu.ExtendedSettingsConfig is guaranteed to be initialized after Hooks->ready
  */
 (() => {
+	const SETTINGS_EXTENDER_VERSION = {
+		major: 1,
+		minor: 1,
+		patch: 1
+	};
+
 	window.Azzu = window.Azzu || {};
 	registerSettingsTypes();
 	extendSettingsWindow();
 
 	// Definitions
+
+	/**
+	 * Collection of utility methods whose only purpose it is to maintain backwards compatibility.
+	 */
+	class Compatibility {
+
+		/**
+		 * Compatibility for <0.5.3
+		 *
+		 * @param data SettingsConfig.getData() object
+		 * @returns data.settings.modules or data.modules
+		 */
+		static getSettingsConfigModules(data) {
+			return data.settings && data.settings.modules ? data.settings.modules : data.modules;
+		}
+
+		/**
+		 * Compatibility for <0.5.3
+		 *
+		 * @param key the key of the game setting
+		 * @returns the game setting object
+		 */
+		static getGameSettting(key) {
+			const settings = game.settings.settings;
+			if (settings instanceof Map) {
+				return settings.get(key);
+			} else {
+				return settings[key];
+			}
+		}
+	}
 
 	function registerSettingsTypes() {
 		if (window.Azzu.SettingsTypes) {
@@ -190,37 +225,115 @@
 			FilePickerImageVideo,
 			FilePickerAudio
 		};
+		FilePickerImage._init = ($html) => {
+			const base = 'FilePicker';
+			const $filePickers = $html.find(`[data-dtype^="${base}"]`);
+			$filePickers.each((idx, input) => {
+				const $input = $(input);
+				const $formGroup = $input.parent();
+				$formGroup.find('.hint').css('order', '100');
+				const target = $input.attr('name');
+				const type = $input.data('dtype').substring(base.length).toLowerCase();
+				const $filePickerButton = $(`<button type=button class=file-picker title="Browse Files" tabindex=-1>`
+					+ `<i class="fas fa-file-import fa-fw"></i></button>`);
+				$filePickerButton.attr('data-type', type);
+				$filePickerButton.attr('data-target', target);
+				$input.after($filePickerButton);
+			});
+		};
 		Object.values(filePickers).forEach(FilePicker => {
 			FilePicker.parse = (val) => val;
 			FilePicker.format = (val) => val;
-			FilePicker._addButtons = ($html) => {
-				const base = 'FilePicker';
-				const $filePickers = $html.find(`[data-dtype^="${base}"]`);
-				$filePickers.each((idx, input) => {
-					const $input = $(input);
-					const $formGroup = $input.parent();
-					$formGroup.find('.hint').css('order', '100');
-					const target = $input.attr('name');
-					const type = $input.data('dtype').substring(base.length).toLowerCase();
-					$input.after(`<button type=button class=file-picker data-type="${type}"`
-						+ ` data-target="${target}" title="Browse Files" tabindex=-1>`
-						+ `<i class="fas fa-file-import fa-fw"></i></button>`);
-				});
-			};
 		});
+
+		class DirPicker extends FilePicker {
+			constructor(options) {
+				super(options);
+
+				this.extensions = [];
+			}
+
+			activateListeners($html) {
+				super.activateListeners($html);
+				$html.find('.form-footer').remove();
+				$html.find('.dir').each((idx, li) => {
+					const $li = $(li);
+					$li.css('padding-left', 0);
+					const $selectButton = $('<button type=button>Select</button>');
+					$selectButton.css('width', 'auto');
+					$selectButton.css('margin-left', '0');
+					this._addOnClick($selectButton, $li.data('path'));
+					$li.prepend($selectButton)
+				});
+
+				$html.find('.note').text('No subdirectories.');
+
+				const $selectCurrent = $('<button type=button>Select current directory</button>');
+				this._addOnClick($selectCurrent, $html.find('[name=target]').val());
+				$html.append($selectCurrent);
+			}
+
+			_addOnClick($selectButton, path) {
+				$selectButton.click((event) => {
+					event.stopPropagation();
+					$(this.field).val(path);
+					this.close();
+				});
+			}
+		}
+
+		function DirectoryPicker(val) {
+			return val;
+		}
+
+		DirectoryPicker.parse = (val) => val;
+		DirectoryPicker.format = (val) => val;
+		DirectoryPicker._init = ($html) => {
+			const $directoryPickers = $html.find(`[data-dtype="${DirectoryPicker.name}"]`);
+			$directoryPickers.each((idx, input) => {
+				const $input = $(input);
+				const $browseButton = $(`<button type=button title="Browse Directories" tabindex=-1>`
+					+ `<i class="fas fa-file-import fa-fw"></i></button>`);
+				$browseButton.css('flex', '0 0 24px');
+				$browseButton.css('line-height', '24px');
+				$browseButton.css('margin-left', '4px');
+				$input.after($browseButton);
+				$browseButton.click((event) => {
+					event.preventDefault();
+					new DirPicker({
+						field: $input,
+						current: $input.val(),
+						button: $browseButton
+					}).browse();
+				});
+			})
+		};
+
 
 		return {
 			MouseButtonBinding,
 			KeyBinding,
-			...filePickers
+			...filePickers,
+			DirectoryPicker
 		};
+	}
+
+	function isNewestVersionEnabled() {
+		const existingClass = window.Azzu.ExtendedSettingsConfig;
+		if (!existingClass) return false;
+
+		const oldVersion = existingClass.settingsExtenderVersion;
+		if (!oldVersion) return false;
+
+		const curVersion = SETTINGS_EXTENDER_VERSION;
+		return oldVersion.major < curVersion.major
+			|| oldVersion.minor < curVersion.minor
+			|| oldVersion.patch < curVersion.patch
 	}
 
 	function extendSettingsWindow() {
 		Hooks.once('ready', () => {
-			if (window.Azzu.ExtendedSettingsConfig) {
-				return;
-			}
+			if (isNewestVersionEnabled()) return;
 
 			window.Azzu.ExtendedSettingsConfig = ExtendedSettingsConfig;
 			game.settings._sheet = new ExtendedSettingsConfig(game.settings.settings);
@@ -228,11 +341,23 @@
 	}
 
 	class ExtendedSettingsConfig extends SettingsConfig {
+
+		static get settingsExtenderVersion() {
+			return SETTINGS_EXTENDER_VERSION;
+		}
+
+		static get defaultOptions() {
+			return mergeObject(super.defaultOptions, {
+				baseApplication: 'SettingsConfig'
+			});
+		}
+
 		getData() {
 			const data = super.getData();
-			data.modules.flatMap(m => m.settings).forEach(setting => {
+			const modules = Compatibility.getSettingsConfigModules(data);
+			modules.flatMap(m => m.settings).forEach(setting => {
 				const key = setting.module + '.' + setting.key;
-				const type = game.settings.settings[key].type;
+				const type = Compatibility.getGameSettting(key).type;
 				if (typeof type === 'function') {
 					setting.type = type.name;
 				} else {
@@ -246,7 +371,7 @@
 			let extraTypes = window.Azzu.SettingsTypes;
 			// before super.activateListeners as FormApplication.activateListeners
 			// initialises FilePickers
-			extraTypes.FilePickerImage._addButtons($html);
+			Object.values(extraTypes).forEach(type => type._init && type._init($html));
 
 			super.activateListeners($html);
 
