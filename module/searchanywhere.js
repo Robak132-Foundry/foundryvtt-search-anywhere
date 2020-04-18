@@ -274,11 +274,11 @@ class CompendiumSuggestionData {
     }
 
     match(query) {
-        return (game.user.isGM || this.pack.public) && this.entry.name.toLowerCase().includes(query.toLowerCase());
+        return (game.user.isGM || !this.pack.private) && this.entry.name.toLowerCase().includes(query.toLowerCase());
     }
 
     render() {
-        this.pack.getEntity(this.entry.id)
+        this.pack.getEntity(this.entry._id)
             .then(entity => {
                 const sheet = entity.sheet;
                 sheet.options.editable = false;
