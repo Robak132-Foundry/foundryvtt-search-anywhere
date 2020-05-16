@@ -16,7 +16,7 @@
   background-color: #fefefe;
   margin: 5% auto;
   border: 1px solid #888;
-  width: 40%;
+  width: 50%;
 }
 
 .modal-content input[type=text] {
@@ -29,21 +29,22 @@
 }
 
 .autocomplete-suggestions { 
-  border: 1px solid #999; 
-  background: #FFF; 
-  overflow: auto; 
+  border: 1px solid #999;
+  background: #fff;
+  overflow: auto;
 }
 
 .autocomplete-suggestion { 
-  padding: 10px;
   font-family: "Signika", "Palatino Linotype", serif;
   font-size: 18px;
   white-space: nowrap; 
-  overflow: hidden; 
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 42px auto auto;
 }
 
-.autocomplete-selected { 
-  background: #F0F0F0; 
+.autocomplete-selected {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .autocomplete-suggestions strong { 
@@ -70,4 +71,71 @@
   border: 1px solid #111;
   left: 0;
   border-radius: 0 4px 0 0;
+}
+
+.autocomplete-suggestion .suggestion {
+  text-align: left;
+  padding: 10px;
+}
+
+.autocomplete-suggestion .span {
+  grid-column: 1 / span 2;
+}
+
+.autocomplete-suggestion .info {
+  text-align: right;
+  padding: 10px;
+}
+
+.autocomplete-suggestion .thumbnail {
+  display: inline-block;
+  border-style: none;
+  border-width: 0px;
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+}
+
+.command-menu {
+  display: none;
+  position: fixed;
+  list-style: none;
+  overflow: hidden;
+  z-index: 999999;
+  top: 15%;
+  left: calc(50% - 180px);
+  width: 300px;
+  color: #FFF;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  box-shadow: 0 0 30px #000;
+  padding-inline-start: 0px;
+}
+
+.command-menu li {
+  border-left: 3px solid transparent;
+  transition: ease .2s;
+  cursor: pointer;
+}
+
+.command-menu li h2 {
+  display: block;
+  padding: 10px;
+  color: #FFFFFF;
+  text-decoration: none;
+  transition: ease .2s;
+  margin: 0;
+  border: none;
+}
+
+.command-menu li.selected {
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 3px solid #ff0200;
+}
+
+.command-menu li:hover {
+  text-shadow: 0 0 10px #ff6400;
 }

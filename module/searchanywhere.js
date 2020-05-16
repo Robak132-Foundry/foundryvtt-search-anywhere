@@ -1,19 +1,129 @@
 
-Hooks.on('init', () => {
+const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro'];
+
+const SUGGESTION_ICON_TYPES = {
+    "Actor": 'fas fa-users',
+    "Item": 'fas fa-suitcase',
+    "Scene": 'fas fa-map',
+    "JournalEntry": 'fas fa-book-open',
+    "RollTable": 'fas fa-th-list',
+    "Macro": 'fas fa-terminal',
+    "COMPENDIUM": 'fas fa-atlas'
+};
+
+const SUGGESTION_KEYMAP_TYPES = {
+    "Actor": 'Ctrl + t',
+    "Item": 'Ctrl + i',
+    "Scene": 'Ctrl + e',
+    "JournalEntry": 'Ctrl + j',
+    "RollTable": 'Ctrl + r',
+    "Macro": 'Ctrl + m',
+    "COMPENDIUM": 'fas fa-atlas'
+};
+
+Hooks.once('init', () => {
+
+    game.settings.register('searchanywhere', 'settingKey', {
+        name: 'SEARCHANYWHERE.searchKeymap',
+        hint: 'SEARCHANYWHERE.searchKeymapHint',
+        type: window.Azzu.SettingsTypes.KeyBinding,
+        default: 'Ctrl +  ',
+        scope: 'client',
+        config: true
+    });
+
+    SEARCHABLE_ENTITY_TYPES.forEach(type => {
+        game.settings.register('searchanywhere', `setting${type}Key`, {
+            name: `SEARCHANYWHERE.search${type}Keymap`,
+            hint: `SEARCHANYWHERE.search${type}KeymapHint`,
+            type: window.Azzu.SettingsTypes.KeyBinding,
+            default: SUGGESTION_KEYMAP_TYPES[type],
+            scope: 'client',
+            config: true
+        });
+    });
+
+    game.settings.register('searchanywhere', 'settingImage', {
+        name: 'SEARCHANYWHERE.image',
+        hint: 'SEARCHANYWHERE.imageHint',
+        type: Boolean,
+        default: true,
+        scope: 'client',
+        config: true
+    });
+
+    game.settings.register('searchanywhere', 'settingPlayers', {
+        name: 'SEARCHANYWHERE.players',
+        hint: 'SEARCHANYWHERE.playersHint',
+        type: Boolean,
+        default: false,
+        scope: 'world',
+        config: true
+    });
+
+    game.settings.register('searchanywhere', 'settingCommand', {
+        name: 'SEARCHANYWHERE.command',
+        hint: 'SEARCHANYWHERE.commandHint',
+        type: String,
+        default: "always",
+        choices: {
+            "always": "SEARCHANYWHERE.commandAlways",
+            "onShift": "SEARCHANYWHERE.commandOnShift",
+            "never": "SEARCHANYWHERE.commandNever"
+        },
+        scope: 'world',
+        config: true
+    });
+});
+
+Hooks.once('ready', () => {
 
     const searchField = new AutoCompletionField();
+    const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
 
     document.onkeydown = function (evt) {
-        const stringValue = game.settings.get('searchanywhere', 'settingKey');
-        const parsedValue = window.Azzu.SettingsTypes.KeyBinding.parse(stringValue);
-        if (window.Azzu.SettingsTypes.KeyBinding.eventIsForBinding(evt, parsedValue)) {
-            evt.stopPropagation();
-            searchField.show();
-        }
-        if (evt.key === "Escape" && searchField.visible) {
+        const cmd = game.settings.get('searchanywhere', 'settingCommand');
+
+        if (evt.key === "Escape" && (searchField.visible || CommandMenu.visible)) {
             evt.stopPropagation();
             searchField.hide();
+            CommandMenu.dispose();
+            return;
         }
+
+        const stringValue = game.settings.get('searchanywhere', 'settingKey');
+        const parsedValue = KeyBinding.parse(stringValue);
+        const withShift = KeyBinding.parse('Shift + ' + stringValue);
+        const bind = KeyBinding.eventIsForBinding(evt, parsedValue);
+        const bindWithShift = KeyBinding.eventIsForBinding(evt, withShift);
+
+        if (bind || (cmd === 'onShift' && bindWithShift)) {
+            evt.stopPropagation();
+            searchField.show(
+                game.i18n.localize(`SEARCHANYWHERE.searchHint`),
+                cmd === 'always' || (cmd === 'onShift' && bindWithShift)
+            );
+            return;
+        }
+
+        SEARCHABLE_ENTITY_TYPES.forEach(type => {
+            const stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
+            const parsedTypeValue = KeyBinding.parse(stringTypeValue);
+            const withShiftType = KeyBinding.parse('Shift + ' + stringTypeValue);
+
+            const bindType = KeyBinding.eventIsForBinding(evt, parsedTypeValue);
+            const bindTypeWithShift = KeyBinding.eventIsForBinding(evt, withShiftType);
+
+            if (bindType || (cmd === 'onShift' && bindTypeWithShift)) {
+                evt.stopPropagation();
+                searchField.show(
+                    game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
+                    cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
+                    {"entityType": type }
+                );
+                return false;
+            }
+        });
     };
 
     window.onclick = function (evt) {
@@ -21,18 +131,6 @@ Hooks.on('init', () => {
             searchField.hide();
         }
     };
-
-    game.settings.register('searchanywhere', 'settingKey', {
-        name: 'Keymap',
-        hint: 'Enter the keymap used to display the search bar',
-        type: window.Azzu.SettingsTypes.KeyBinding,
-        default: 'Ctrl +  ',
-        scope: 'client',
-        config: true
-    });
-});
-
-Hooks.on('ready', () => {
 
     collectSheets(CONFIG.Actor).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Actor'));
     collectSheets(CONFIG.Item).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Item'));
@@ -54,13 +152,16 @@ collectSheets = function(entityType) {
     return sheetClasses;
 };
 
-const SUGGESTION_ICON_TYPES = {
-    "ACTOR": 'fas fa-users',
-    "ITEM": 'fas fa-suitcase',
-    "SCENE": 'fas fa-map',
-    "JOURNAL": 'fas fa-book-open',
-    "TABLE": 'fas fa-th-list',
-    "COMPENDIUM": 'fas fa-atlas'
+copyToClipboard = function(str) {
+    const el = document.createElement('textarea');
+    el.value = str;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
 };
 
 class DragHandler {
@@ -107,11 +208,20 @@ class DragHandler {
 class AutoCompletionField {
 
     constructor() {
+        this._buildHtml();
+        this._buildIndex();
+    }
+
+    /**
+     *
+     * @private
+     */
+    _buildHtml() {
         const modalHtml = $(
             '<div id="search-anywhere-modal" class="modal">' +
-                '<div class="modal-content">' +
-                    '<input id="search-anywhere-autocomplete" type="text" placeholder="Search...">' +
-                '</div>' +
+            '<div class="modal-content">' +
+            '<input id="search-anywhere-autocomplete" type="text" placeholder="Search...">' +
+            '</div>' +
             '</div>'
         );
 
@@ -120,45 +230,18 @@ class AutoCompletionField {
         this.modal = document.getElementById('search-anywhere-modal');
         this.input = document.getElementById('search-anywhere-autocomplete');
 
-        this.suggestions = [];
-        this.visible = false;
-
-        let me = this;
-
         $('#search-anywhere-autocomplete').autocomplete({
-            lookup: function (query, done) {
-                done({
-                    suggestions: me.suggestions.filter(
-                        function (suggestion) {
-                            return suggestion.match(query);
-                        }
-                    )
-                });
-            },
-
-            formatResult: function (suggestion, value) {
-                let text = $.Autocomplete.defaults.formatResult(suggestion, value);
-                let icon = suggestion.icon;
-                return '<span style="float: left">' + text + '</span><i class="' + icon + '" style="float: right"></i>';
-            },
-
-            onSelect: function (suggestion) {
-                suggestion.render();
-                me.hide();
-            }
+            noCache: true,
+            //triggerSelectOnValidInput: false,
+            //preserveInput: true,
+            lookup: this.lookup.bind(this),
+            formatResult: this.formatResult.bind(this),
+            onSelect: this.onSelect.bind(this)
         });
 
         this.input.addEventListener('keydown', evt => {
             if(evt.key === 'Enter') {
-                let [command, match] = ChatLog.parse(this.input.value);
-                if(match) {
-                    ui.chat._processMessageData(this.input.value).then(() => {
-                        this.hide();
-                    }).catch(error => {
-                        ui.notifications.error(error);
-                        throw error;
-                    });
-                }
+                this.state.processCommand(this.input.value);
             }
         });
 
@@ -171,7 +254,71 @@ class AutoCompletionField {
             html.append(searchBtn);
             searchBtn[0].addEventListener('click', evt => {
                 evt.stopPropagation();
-                this.show();
+                this.show(
+                    game.i18n.localize(`SEARCHANYWHERE.searchHint`),
+                    true
+                );
+            });
+        });
+
+        this.visible = false;
+    }
+
+    /**
+     *
+     * @private
+     */
+    _buildIndex() {
+
+        this.index = new FlexSearch({
+            encode: "simple",
+            tokenize: "reverse",
+            cache: true,
+            doc: {
+                id: "data",
+                field: [
+                    "value",
+                    "content"
+                ],
+                tag: "entityType"
+            }
+        });
+
+        Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
+
+            let suggestions = [].concat(
+                game.actors.entities.map(entity => new EntitySuggestionData(entity)),
+                game.items.entities.map(entity => new EntitySuggestionData(entity)),
+                game.scenes.entities.map(entity => new EntitySuggestionData(entity)),
+                game.journal.entities.map(entity => new EntitySuggestionData(entity)),
+                game.tables.entities.map(entity => new EntitySuggestionData(entity)),
+                game.macros.entities.map(entity => new EntitySuggestionData(entity))
+            );
+
+            indexes.forEach((index, idx) => {
+                suggestions = suggestions.concat(
+                    index.map(
+                        entry => new CompendiumSuggestionData(entry, game.packs[idx])
+                    )
+                );
+            });
+
+            this.index.add(suggestions);
+
+        }).catch(err => {
+            console.error(`Unable fetch compendium indexes: ${err}`);
+        });
+
+        SEARCHABLE_ENTITY_TYPES.forEach(entityType => {
+            Hooks.on(`create${entityType}`, (entity) => {
+                this.index.add(new EntitySuggestionData(entity, entityType));
+            });
+            Hooks.on(`update${entityType}`, (entity) => {
+                this.index.update(new EntitySuggestionData(entity, entityType));
+            });
+            Hooks.on(`delete${entityType}`, (entity) => {
+                let suggestion = this.index.find(entity.id);
+                this.index.remove(suggestion);
             });
         });
     }
@@ -179,42 +326,298 @@ class AutoCompletionField {
     /**
      * Fetch the entire results collecting all the data and then show the search field.
      */
-    show() {
-        Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
+    show(hint, openCmd, filter) {
 
-            this.suggestions = [].concat(
-                game.actors.entities.map(entity => new EntitySuggestionData(entity, 'ACTOR')),
-                game.items.entities.map(entity => new EntitySuggestionData(entity, 'ITEM')),
-                game.scenes.entities.map(entity => new EntitySuggestionData(entity, 'SCENE')),
-                game.journal.entities.map(entity => new EntitySuggestionData(entity, 'JOURNAL')),
-                game.tables.entities.map(entity => new EntitySuggestionData(entity, 'TABLE'))
-            );
+        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+        if(hideShowForPlayers && !game.user.isGM) {
+            return;
+        }
 
-            indexes.forEach((index, idx) => {
-                this.suggestions = this.suggestions.concat(
-                    index.map(
-                        entry => new CompendiumSuggestionData(entry, game.packs[idx])
-                    )
-                );
-            });
-
-            this.modal.style.display = "block";
-            this.input.value = '';
-            this.input.focus();
-            this.visible = true;
-
-        }).catch(err => {
-            console.error(`Unable fetch compendium indexes: ${err}`);
-        });
+        this.modal.style.display = "block";
+        this.input.value = '';
+        this.input.focus();
+        this.visible = true;
+        this.filter = filter;
+        this.openCmd = openCmd;
+        $('#search-anywhere-autocomplete').attr("placeholder", hint);
     }
 
     /**
      * Discard the cached data and hide the modal search field.
      */
     hide() {
-        this.suggestions = [];
         this.modal.style.display = "none";
         this.visible = false;
+        this.filter = null;
+    }
+
+    /**
+     *
+     * @param query
+     * @param done
+     */
+    lookup(query, done) {
+        this.state = this._whichState(query);
+        this.state.lookup(query, done);
+    }
+
+    /**
+     *
+     * @param suggestion
+     * @param value
+     * @returns {string}
+     */
+    formatResult(suggestion, value) {
+        return this.state.formatResult(suggestion, value);
+    }
+
+    /**
+     *
+     * @param suggestion
+     */
+    onSelect(suggestion) {
+        this.state.onSelect(suggestion);
+    }
+
+    /**
+     *
+     * @param query
+     * @private
+     */
+    _whichState(query) {
+        return query.startsWith('/') ? new CommandState(this) : new SearchState(this);
+    }
+
+}
+
+class SearchState {
+
+    constructor(searchField) {
+        this.field = searchField;
+    }
+
+    /**
+     *
+     * @param query
+     * @param done
+     */
+    lookup(query, done) {
+        done({
+            suggestions: this.field.index.search(query, {
+                field: ["value", "content"],
+                where: this.field.filter ? this.field.filter : undefined
+
+            }).filter(suggestion => suggestion.allowed())
+        });
+    }
+
+    /**
+     *
+     * @param suggestion
+     * @param value
+     * @returns {string}
+     */
+    formatResult(suggestion, value) {
+        let text = suggestion.value;
+        let icon = suggestion.icon;
+        let image = suggestion.image;
+        let entityType = game.i18n.localize(`SEARCHANYWHERE.desc${suggestion.entityType}`);
+        let collection = suggestion.collection;
+        let showImage = game.settings.get('searchanywhere', 'settingImage');
+        let imageDiv = showImage ? `<div class="thumbnail" style="background-image: url(${image});"></div>` : '';
+        let suggestionDiv = `<div class="suggestion ${showImage?'':'span'}">${text}</div>`;
+        let infoDiv = `<div class="info">${entityType} - ${collection} <i class="${icon}" style="width: 20px"></i></div>`;
+        return `${imageDiv}${suggestionDiv}${infoDiv}`;
+    }
+
+    /**
+     *
+     * @param suggestion
+     */
+    onSelect(suggestion) {
+        this.field.hide();
+        if(this.field.openCmd) {
+            CommandMenu.create(suggestion);
+        } else {
+            suggestion.render();
+        }
+    }
+
+    /**
+     *
+     * @param command
+     */
+    processCommand(command) {
+
+    }
+}
+
+class CommandState {
+
+    constructor(searchField) {
+        this.field = searchField;
+    }
+
+    static get commands() {
+        return [{
+            value: '/ic',
+            data: '/ic'
+        }, {
+            value: '/ooc',
+            data: '/ooc'
+        }, {
+            value: '/emote',
+            data: '/emote'
+        }, {
+            value: '/whisper',
+            data: '/whisper'
+        }, {
+            value: '/roll',
+            data: '/roll'
+        }, {
+            value: '/gmroll',
+            data: '/gmroll'
+        }, {
+            value: '/blindroll',
+            data: '/blindroll'
+        }, {
+            value: '/selfroll',
+            data: '/selfroll'
+        }];
+    }
+
+    /**
+     *
+     * @param query
+     * @param done
+     */
+    lookup(query, done) {
+        done({
+            suggestions: CommandState.commands.filter(cmd => cmd.value.includes(query.toLowerCase()))
+        });
+    }
+
+    /**
+     *
+     * @param suggestion
+     * @param value
+     * @returns {string}
+     */
+    formatResult(suggestion, value) {
+        return `<div class="suggestion">${suggestion.value}</div>`;
+    }
+
+    /**
+     *
+     * @param suggestion
+     */
+    onSelect(suggestion) {
+    }
+
+    /**
+     *
+     * @param message
+     */
+    processCommand(message) {
+        let [command, match] = ChatLog.parse(message);
+        if(match) {
+            ui.chat.processMessage(message).then(() => {
+                this.field.hide();
+            }).catch(error => {
+                ui.notifications.error(error);
+                throw error;
+            });
+        }
+    }
+}
+
+/**
+ * Command list popup window.
+ */
+class CommandMenu {
+
+    static create(suggestion) {
+        CommandMenu.instance = new CommandMenu(suggestion);
+    }
+
+    static dispose() {
+        if(CommandMenu.instance) {
+            CommandMenu.instance.dispose();
+            CommandMenu.instance = null;
+        }
+    }
+
+    static get visible() {
+        return CommandMenu.instance;
+    }
+
+    constructor(suggestion) {
+        this.suggestion = suggestion;
+        this._buildHtml();
+    }
+
+    _buildHtml() {
+        const html = $(
+            `<ul class="command-menu">
+            ${this.suggestion.commands.map((cmd, i) =>
+                `<li class="${i===0?'selected':''}" data-cmd-id="${cmd.id}"><h2>${game.i18n.localize(cmd.label)}</h2></li>`
+            ).join('')}
+            </ul>`
+        );
+        html.appendTo($('body'));
+
+        $(window).on("keydown.command-menu", this._onKeyDown.bind(this));
+        $('.command-menu li').click(this._onClick.bind(this));
+
+        this.selected = $('li.selected');
+        $(".command-menu").show();
+    }
+
+    _onKeyDown(evt) {
+        if(evt.which === 40) {
+            evt.stopPropagation();
+            this._onDownArrow();
+        }
+        if(evt.which === 38) {
+            evt.stopPropagation();
+            this._onUpArrow();
+        }
+        if(evt.key === "Enter") {
+            evt.stopPropagation();
+            this._onSelect();
+        }
+    }
+
+    _onDownArrow() {
+        let next = this.selected.next();
+        if(next.length > 0){
+            this.selected.removeClass('selected');
+            this.selected = next.addClass('selected');
+        }
+    }
+
+    _onUpArrow() {
+        let prev = this.selected.prev();
+        if(prev.length > 0){
+            this.selected.removeClass('selected');
+            this.selected = prev.addClass('selected');
+        }
+    }
+
+    _onSelect() {
+        const cmdId = this.selected.attr('data-cmd-id');
+        this.suggestion[cmdId]();
+        CommandMenu.dispose();
+    }
+
+    _onClick(evt) {
+        this.selected = $(evt.currentTarget);
+        this._onSelect();
+    }
+
+    dispose() {
+        $(window).off(".command-menu");
+        $(".command-menu" ).remove();
     }
 
 }
@@ -224,9 +627,8 @@ class AutoCompletionField {
  */
 class EntitySuggestionData {
 
-    constructor(entity, type) {
+    constructor(entity) {
         this.entity = entity;
-        this.type = type;
     }
 
     get value() {
@@ -237,16 +639,122 @@ class EntitySuggestionData {
         return this.entity.id;
     }
 
-    get icon() {
-        return SUGGESTION_ICON_TYPES[this.type];
+    get content() {
+        switch (this.entityType) {
+            case 'Actor': return this.entity.data.data.details.biography.value;
+            case 'Item': return this.entity.data.data.description.value;
+            case 'JournalEntry': return this.entity.data.content;
+            case 'RollTable': return this.entity.data.content;
+        }
+        return '';
     }
 
-    match(query) {
-        return this.entity.visible && this.entity.name.toLowerCase().includes(query.toLowerCase());
+    get icon() {
+        return SUGGESTION_ICON_TYPES[this.entity.entity];
+    }
+
+    get entityType() {
+        return this.entity.entity;
+    }
+
+    get collection() {
+        return 'World';
+    }
+
+    get image() {
+        switch (this.entityType) {
+            case 'Macro': return this.entity.data.img;
+            case 'JournalEntry': return 'modules/searchanywhere/icons/book.svg';
+            case 'RollTable': return 'icons/svg/d20-grey.svg';
+        }
+        return !this.entity.img || this.entity.img === DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entity.img;
+    }
+
+    allowed() {
+        return this.entity.visible;
+    }
+
+    get commands() {
+        let commands = [{
+            id: 'render', label: 'SEARCHANYWHERE.commandOpen'
+        }, {
+            id: 'copy', label: 'SEARCHANYWHERE.commandCopy'
+        }, {
+            id: 'message', label: 'SEARCHANYWHERE.commandChat'
+        }];
+
+        if(this.entityType === 'Macro') {
+            commands.push({
+                id: 'execute', label: 'SEARCHANYWHERE.commandExecute'
+            });
+        }
+
+        if(this.entityType === 'Scene') {
+            commands.push({
+                id: 'activate', label: 'SEARCHANYWHERE.commandActivate'
+            });
+            commands.push({
+                id: 'configure', label: 'SEARCHANYWHERE.commandConfigure'
+            });
+            commands.push({
+                id: 'openNote', label: 'SEARCHANYWHERE.commandNote'
+            });
+        }
+
+        if(this.entityType === 'RollTable') {
+            commands.push({
+                id: 'roll', label: 'SEARCHANYWHERE.commandRoll'
+            });
+        }
+
+        return commands;
     }
 
     render() {
+        if(this.entityType === 'Scene') {
+            this.entity.view();
+        } else {
+            this.entity.sheet.render(true);
+        }
+    }
+
+    copy() {
+        copyToClipboard(this._formatReference());
+        ui.notifications.info(game.i18n.localize("SEARCHANYWHERE.copyMessage"));
+    }
+
+    message() {
+        ChatMessage.create({
+            "content": this._formatReference()
+        });
+    }
+
+    execute() {
+        this.entity.execute();
+    }
+
+    activate() {
+        this.entity.activate();
+    }
+
+    openNote() {
+        if(!this.entity.journal) {
+            ui.notifications.warn(game.i18n.localize("SEARCHANYWHERE.noJournalNote"));
+            return;
+        }
+        this.entity.journal.sheet.render(true);
+    }
+
+    configure() {
         this.entity.sheet.render(true);
+    }
+
+    roll() {
+        this.entity.draw();
+    }
+
+    _formatReference() {
+        return `@${this.entityType}[${this.entity.id}]{${this.entity.name}}`;
     }
 
 }
@@ -266,15 +774,57 @@ class CompendiumSuggestionData {
     }
 
     get data() {
-        return this.entry.id;
+        return this.entry._id;
     }
 
     get icon() {
         return SUGGESTION_ICON_TYPES.COMPENDIUM;
     }
 
-    match(query) {
-        return (game.user.isGM || !this.pack.private) && this.entry.name.toLowerCase().includes(query.toLowerCase());
+    get entityType() {
+        return this.pack.entity;
+    }
+
+    get collection() {
+        return this.pack.metadata.label;
+    }
+
+    get image() {
+        switch (this.entityType) {
+            case 'JournalEntry': return 'modules/searchanywhere/icons/book.svg';
+            case 'RollTable': return 'icons/svg/d20-grey.svg';
+        }
+        return !this.entry.img || this.entry.img === DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entry.img;
+    }
+
+    allowed() {
+        return game.user.isGM || !this.pack.private;
+    }
+
+    get commands() {
+        let commands = [{
+            id: 'render', label: 'SEARCHANYWHERE.commandOpen'
+        }, {
+            id: 'copy', label: 'SEARCHANYWHERE.commandCopy'
+        }, {
+            id: 'message', label: 'SEARCHANYWHERE.commandChat'
+        }, {
+            id: 'import', label: 'SEARCHANYWHERE.commandImport'
+        }];
+
+        if(this.entityType === 'Macro') {
+            commands.push({
+                id: 'execute', label: 'SEARCHANYWHERE.commandExecute'
+            });
+        }
+
+        if(this.entityType === 'RollTable') {
+            commands.push({
+                id: 'roll', label: 'SEARCHANYWHERE.commandRoll'
+            });
+        }
+
+        return commands;
     }
 
     render() {
@@ -288,6 +838,52 @@ class CompendiumSuggestionData {
             .catch(err => {
                 console.error(`Unable render compendium entity sheet: ${err}`);
             });
+    }
+
+    copy() {
+        copyToClipboard(this._formatReference());
+        ui.notifications.info(game.i18n.localize("SEARCHANYWHERE.copyMessage"));
+    }
+
+    message() {
+        ChatMessage.create({
+            "content": this._formatReference()
+        });
+    }
+
+    execute() {
+        this.pack.getEntity(this.entry._id)
+            .then(entity => {
+                entity.execute();
+            })
+            .catch(err => {
+                console.error(`Unable execute compendium macro: ${err}`);
+            });
+    }
+
+    roll() {
+        this.pack.getEntity(this.entry._id)
+            .then(entity => {
+                entity.draw();
+            })
+            .catch(err => {
+                console.error(`Unable roll compendium table: ${err}`);
+            });
+    }
+
+    import() {
+        this.pack.getEntity(this.entry._id)
+            .then(entity => {
+                const packName = entity.compendium.collection;
+                entity.collection.importFromCollection(packName, entity._id);
+            })
+            .catch(err => {
+                console.error(`Unable roll compendium table: ${err}`);
+            });
+    }
+
+    _formatReference() {
+        return `@Compendium[${this.pack.collection}.${this.entry._id}]{${this.entry.name}}`;
     }
 
 }
