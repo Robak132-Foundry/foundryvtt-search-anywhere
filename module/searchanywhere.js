@@ -209,7 +209,7 @@ class AutoCompletionField {
 
     constructor() {
         this._buildHtml();
-        this._buildIndex();
+        setTimeout(this._buildIndex.bind(this), 1000);
     }
 
     /**
@@ -287,18 +287,18 @@ class AutoCompletionField {
         Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
 
             let suggestions = [].concat(
-                game.actors.entities.map(entity => new EntitySuggestionData(entity)),
-                game.items.entities.map(entity => new EntitySuggestionData(entity)),
-                game.scenes.entities.map(entity => new EntitySuggestionData(entity)),
-                game.journal.entities.map(entity => new EntitySuggestionData(entity)),
-                game.tables.entities.map(entity => new EntitySuggestionData(entity)),
-                game.macros.entities.map(entity => new EntitySuggestionData(entity))
+                game.actors.map(entity => new EntitySuggestionData(entity)),
+                game.items.map(entity => new EntitySuggestionData(entity)),
+                game.scenes.map(entity => new EntitySuggestionData(entity)),
+                game.journal.map(entity => new EntitySuggestionData(entity)),
+                game.tables.map(entity => new EntitySuggestionData(entity)),
+                game.macros.map(entity => new EntitySuggestionData(entity))
             );
 
             indexes.forEach((index, idx) => {
                 suggestions = suggestions.concat(
                     index.map(
-                        entry => new CompendiumSuggestionData(entry, game.packs[idx])
+                        entry => new CompendiumSuggestionData(entry, game.packs.entries[idx])
                     )
                 );
             });
