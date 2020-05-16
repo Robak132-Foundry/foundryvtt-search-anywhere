@@ -19,6 +19,39 @@ The module adds a small drag handler in the lower left corner of the window that
 
 ![Preview](/preview-1.1..gif?raw=true)
 
+## From version 2.0:
+
+- Significant performance increase via flexsearch indexing, even in worlds with huge amount of data.
+- Search by multiple words, order independent.
+
+![Preview](/multiple-word-search.gif?raw=true)
+
+- Full text content search inside Journal Entries, Item description, Actor bio & Rollable Table description (world's entity only)
+- Better indication of the source of the suggestion (compendium/type).
+- Thumbnail image preview (where present).
+- Type-filtered search binded with specific keymap (fully customizable in the settings). Ex. press 'Ctrl + m' to Macro only search. 
+- Multiple choice of commands at the entity selection:
+
+![Preview](/command-window.gif?raw=true)
+
+	- open: open the entity sheet (for scenes, the scene itself is displayed)
+	- copy reference: clipboard copy of the entity reference. 
+	- send reference in chat: create a chat message with the entity reference.
+	- execute: only for Macro, runs the macro.
+	- roll: only for Rollable Tables, roll the table and diplay the result in chat.
+	- activate: only for Scenes
+	- configure: only for Scenes, open the configuration sheet of the scene.
+	- open journal Note: only for Scenes, open the associated Journal Note.
+	- import: only for compendium entities, directly imports the selected entity in the world.
+	
+![Preview](/import.gif?raw=true)	
+
+- Execute chat commands directly from the search: type '/' and see what commands you can execute. 
+
+![Preview](/roll-dice.gif?raw=true)
+
+- Disable search for players.	
+- Internationalization support.  
 
 ## Installation
 
