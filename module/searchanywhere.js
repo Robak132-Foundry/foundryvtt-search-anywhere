@@ -641,8 +641,8 @@ class EntitySuggestionData {
 
     get content() {
         switch (this.entityType) {
-            case 'Actor': return this.entity.data.data.details.biography.value;
-            case 'Item': return this.entity.data.data.description.value;
+            case 'Actor': return this.entity.data.data.details.biography ? this.entity.data.data.details.biography.value : '';
+            case 'Item': return this.entity.data.data.description ? this.entity.data.data.description.value : '';
             case 'JournalEntry': return this.entity.data.content;
             case 'RollTable': return this.entity.data.content;
         }
