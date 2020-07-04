@@ -164,6 +164,26 @@ copyToClipboard = function(str) {
     document.body.removeChild(el);
 };
 
+class Loader {
+
+    static show(message) {
+        const loader = $(
+            `<div id="index-loader" class="loader-overlay">
+                <div class="loader-container">
+                    <div class="loader-spinner"></div>
+                    <div class="loader-text">${message}</div>
+                </div>
+            </div>`
+        );
+
+        loader.appendTo($('body'));
+    }
+
+    static hide() {
+        $('#index-loader').remove();
+    }
+}
+
 class DragHandler {
 
     constructor(hook, type, query) {
@@ -208,8 +228,28 @@ class DragHandler {
 class AutoCompletionField {
 
     constructor() {
+        this._createIndex();
         this._buildHtml();
-        setTimeout(this._buildIndex.bind(this), 1000);
+    }
+
+    /**
+     *
+     * @private
+     */
+    _createIndex() {
+        this.index = new FlexSearch({
+            encode: "simple",
+            tokenize: "reverse",
+            cache: true,
+            doc: {
+                id: "data",
+                field: [
+                    "value",
+                    "content"
+                ],
+                tag: "entityType"
+            }
+        });
     }
 
     /**
@@ -261,54 +301,6 @@ class AutoCompletionField {
             });
         });
 
-        this.visible = false;
-    }
-
-    /**
-     *
-     * @private
-     */
-    _buildIndex() {
-
-        this.index = new FlexSearch({
-            encode: "simple",
-            tokenize: "reverse",
-            cache: true,
-            doc: {
-                id: "data",
-                field: [
-                    "value",
-                    "content"
-                ],
-                tag: "entityType"
-            }
-        });
-
-        Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
-
-            let suggestions = [].concat(
-                game.actors.map(entity => new EntitySuggestionData(entity)),
-                game.items.map(entity => new EntitySuggestionData(entity)),
-                game.scenes.map(entity => new EntitySuggestionData(entity)),
-                game.journal.map(entity => new EntitySuggestionData(entity)),
-                game.tables.map(entity => new EntitySuggestionData(entity)),
-                game.macros.map(entity => new EntitySuggestionData(entity))
-            );
-
-            indexes.forEach((index, idx) => {
-                suggestions = suggestions.concat(
-                    index.map(
-                        entry => new CompendiumSuggestionData(entry, game.packs.entries[idx])
-                    )
-                );
-            });
-
-            this.index.add(suggestions);
-
-        }).catch(err => {
-            console.error(`Unable fetch compendium indexes: ${err}`);
-        });
-
         SEARCHABLE_ENTITY_TYPES.forEach(entityType => {
             Hooks.on(`create${entityType}`, (entity) => {
                 this.index.add(new EntitySuggestionData(entity, entityType));
@@ -321,25 +313,88 @@ class AutoCompletionField {
                 this.index.remove(suggestion);
             });
         });
+
+        this.visible = false;
     }
 
     /**
-     * Fetch the entire results collecting all the data and then show the search field.
+     *
+     * @private
+     */
+    _buildIndex() {
+        return new Promise((resolve, reject) => {
+
+            Loader.show("Building search indexes in progress, please wait...");
+
+            Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
+
+                let suggestions = [].concat(
+                    game.actors.map(entity => new EntitySuggestionData(entity)),
+                    game.items.map(entity => new EntitySuggestionData(entity)),
+                    game.scenes.map(entity => new EntitySuggestionData(entity)),
+                    game.journal.map(entity => new EntitySuggestionData(entity)),
+                    game.tables.map(entity => new EntitySuggestionData(entity)),
+                    game.macros.map(entity => new EntitySuggestionData(entity))
+                );
+
+                indexes.forEach((index, idx) => {
+                    suggestions = suggestions.concat(
+                        index.map(
+                            entry => new CompendiumSuggestionData(entry, game.packs.entries[idx])
+                        )
+                    );
+                });
+
+                this.index.add(suggestions);
+
+                this.isIndexBuilt = true;
+
+                Loader.hide();
+
+                resolve(true);
+
+            }).catch(err => {
+                console.error(`Unable fetch compendium indexes: ${err}`);
+                resolve(false);
+            });
+        });
+    }
+
+    /**
+     *
+     */
+    rebuildIndex() {
+        this.index.clear();
+        this._buildIndex();
+    }
+
+    /**
+     * Show the search field.
      */
     show(hint, openCmd, filter) {
 
-        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-        if(hideShowForPlayers && !game.user.isGM) {
-            return;
-        }
+        let _show = () => {
+            const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+            if(hideShowForPlayers && !game.user.isGM) {
+                return;
+            }
 
-        this.modal.style.display = "block";
-        this.input.value = '';
-        this.input.focus();
-        this.visible = true;
-        this.filter = filter;
-        this.openCmd = openCmd;
-        $('#search-anywhere-autocomplete').attr("placeholder", hint);
+            this.modal.style.display = "block";
+            this.input.value = '';
+            this.input.focus();
+            this.visible = true;
+            this.filter = filter;
+            this.openCmd = openCmd;
+            $('#search-anywhere-autocomplete').attr("placeholder", hint);
+        };
+
+        if(this.isIndexBuilt) {
+            _show();
+        } else {
+            this._buildIndex().then(built => {
+                _show();
+            });
+        }
     }
 
     /**
@@ -641,7 +696,7 @@ class EntitySuggestionData {
 
     get content() {
         switch (this.entityType) {
-            case 'Actor': return this.entity.data.data.details.biography ? this.entity.data.data.details.biography.value : '';
+            case 'Actor': return this.entity.data.data.details && this.entity.data.data.details.biography ? this.entity.data.data.details.biography.value : '';
             case 'Item': return this.entity.data.data.description ? this.entity.data.data.description.value : '';
             case 'JournalEntry': return this.entity.data.content;
             case 'RollTable': return this.entity.data.content;
