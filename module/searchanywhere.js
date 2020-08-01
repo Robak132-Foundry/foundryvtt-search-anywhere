@@ -164,6 +164,29 @@ copyToClipboard = function(str) {
     document.body.removeChild(el);
 };
 
+safeGet = function(obj, path) {
+    if (!obj) return null;
+    if (!path) return obj;
+
+    const splitPath = path.split('.');
+    const nextObj = obj[splitPath[0]];
+
+    if (nextObj) {
+        if (splitPath.length === 1) return nextObj;
+
+        const remainingPath = splitPath.slice(1).join('.');
+        return safeGet(nextObj, remainingPath);
+    }
+
+    return null;
+};
+
+stripHtml = function(html) {
+    if (!html) return "";
+
+    return $("<div>").html(html).text();
+};
+
 class Loader {
 
     static show(message) {
@@ -354,6 +377,7 @@ class AutoCompletionField {
                 resolve(true);
 
             }).catch(err => {
+                Loader.hide();
                 console.error(`Unable fetch compendium indexes: ${err}`);
                 resolve(false);
             });
@@ -695,13 +719,14 @@ class EntitySuggestionData {
     }
 
     get content() {
+        let content = '';
         switch (this.entityType) {
-            case 'Actor': return this.entity.data.data.details && this.entity.data.data.details.biography ? this.entity.data.data.details.biography.value : '';
-            case 'Item': return this.entity.data.data.description ? this.entity.data.data.description.value : '';
-            case 'JournalEntry': return this.entity.data.content;
-            case 'RollTable': return this.entity.data.content;
+            case 'Actor': content = safeGet(this.entity, 'data.data.details.biography.value'); break;
+            case 'Item': content = safeGet(this.entity, 'data.data.description.value'); break;
+            case 'JournalEntry': content = safeGet(this.entity, 'data.content'); break;
+            case 'RollTable': content = safeGet(this.entity, 'data.content'); break;
         }
-        return '';
+        return stripHtml(content);
     }
 
     get icon() {
