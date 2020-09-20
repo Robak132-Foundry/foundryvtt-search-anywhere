@@ -187,6 +187,35 @@ stripHtml = function(html) {
     return $("<div>").html(html).text();
 };
 
+function promiseAllStepN(n, list) {
+    let tail = list.splice(n);
+    let head = list;
+    let resolved = [];
+    let processed = 0;
+    return new Promise(resolve=>{
+        head.forEach( x => {
+            let res = x();
+            resolved.push(res);
+            res.then(y => {
+                runNext();
+                return y
+            })
+        });
+        function runNext(){
+            if(processed === tail.length) {
+                resolve(Promise.all(resolved))
+            } else {
+                resolved.push(tail[processed]().then(x=>{
+                    runNext();
+                    return x
+                }));
+                processed++
+            }
+        }
+    })
+}
+Promise.allConcurrent = n => list =>  promiseAllStepN(n, list);
+
 class Loader {
 
     static show(message) {
@@ -253,6 +282,7 @@ class AutoCompletionField {
     constructor() {
         this._createIndex();
         this._buildHtml();
+        this.buffer = null;
     }
 
     /**
@@ -349,7 +379,8 @@ class AutoCompletionField {
 
             Loader.show("Building search indexes in progress, please wait...");
 
-            Promise.all(game.packs.map(pack => pack.getIndex())).then(indexes => {
+            const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.entity));
+            Promise.allConcurrent(10)(supportedPacks.map(pack => () => pack.getIndex())).then(indexes => {
 
                 let suggestions = [].concat(
                     game.actors.map(entity => new EntitySuggestionData(entity)),
@@ -436,8 +467,18 @@ class AutoCompletionField {
      * @param done
      */
     lookup(query, done) {
-        this.state = this._whichState(query);
-        this.state.lookup(query, done);
+
+        if(this.buffer) {
+            clearTimeout(this.buffer);
+        }
+
+        let doLookup = () => {
+            this.state = this._whichState(query);
+            this.state.lookup(query, done);
+            this.buffer = null;
+        };
+
+        this.buffer = setTimeout(doLookup, 300);
     }
 
     /**
