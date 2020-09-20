@@ -375,6 +375,7 @@ class AutoCompletionField {
      * @private
      */
     _buildIndex() {
+        this.indexBuilding = true;
         return new Promise((resolve, reject) => {
 
             Loader.show("Building search indexes in progress, please wait...");
@@ -401,13 +402,16 @@ class AutoCompletionField {
 
                 this.index.add(suggestions);
 
+                this.indexBuilding = false;
                 this.isIndexBuilt = true;
 
                 Loader.hide();
 
                 resolve(true);
 
+
             }).catch(err => {
+                this.indexBuilding = false;
                 Loader.hide();
                 console.error(`Unable fetch compendium indexes: ${err}`);
                 resolve(false);
@@ -445,7 +449,7 @@ class AutoCompletionField {
 
         if(this.isIndexBuilt) {
             _show();
-        } else {
+        } else if(!this.indexBuilding) {
             this._buildIndex().then(built => {
                 _show();
             });
