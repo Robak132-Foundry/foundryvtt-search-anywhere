@@ -91,7 +91,11 @@ Hooks.once('ready', () => {
             return;
         }
 
-        const stringValue = game.settings.get('searchanywhere', 'settingKey');
+        let stringValue = game.settings.get('searchanywhere', 'settingKey');
+        if (stringValue.endsWith("+")) {
+            stringValue = stringValue + "  ";
+        }
+
         const parsedValue = KeyBinding.parse(stringValue);
         const withShift = KeyBinding.parse('Shift + ' + stringValue);
         const bind = KeyBinding.eventIsForBinding(evt, parsedValue);
@@ -107,7 +111,11 @@ Hooks.once('ready', () => {
         }
 
         SEARCHABLE_ENTITY_TYPES.forEach(type => {
-            const stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
+            let stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
+            if (stringTypeValue.endsWith("+")) {
+                stringTypeValue = stringTypeValue + "  ";
+            }
+
             const parsedTypeValue = KeyBinding.parse(stringTypeValue);
             const withShiftType = KeyBinding.parse('Shift + ' + stringTypeValue);
 
