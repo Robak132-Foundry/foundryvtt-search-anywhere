@@ -78,6 +78,11 @@ Hooks.once('init', () => {
 
 Hooks.once('ready', () => {
 
+    const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+    if(hideShowForPlayers && !game.user.isGM) {
+        return;
+    }
+
     const searchField = new AutoCompletionField();
     const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
 
@@ -143,6 +148,8 @@ Hooks.once('ready', () => {
     collectSheets(CONFIG.Actor).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Actor'));
     collectSheets(CONFIG.Item).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Item'));
     new DragHandler('renderJournalSheet', 'JournalEntry');
+
+    game.searchAnywhere = searchField;
 });
 
 collectSheets = function(entityType) {
@@ -344,22 +351,6 @@ class AutoCompletionField {
             if(evt.key === 'Enter') {
                 this.state.processCommand(this.input.value);
             }
-        });
-
-        Hooks.on('renderSceneControls', (controls, html) => {
-            const searchBtn = $(
-                `<li class="scene-control">
-                    <i class="fas fa-search"></i>
-                </li>`
-            );
-            html.append(searchBtn);
-            searchBtn[0].addEventListener('click', evt => {
-                evt.stopPropagation();
-                this.show(
-                    game.i18n.localize(`SEARCHANYWHERE.searchHint`),
-                    true
-                );
-            });
         });
 
         SEARCHABLE_ENTITY_TYPES.forEach(entityType => {
