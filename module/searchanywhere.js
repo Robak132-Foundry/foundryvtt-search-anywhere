@@ -74,19 +74,12 @@ Hooks.once('init', () => {
         scope: 'world',
         config: true
     });
-});
-
-Hooks.once('ready', () => {
-
-    const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-    if(hideShowForPlayers && !game.user.isGM) {
-        return;
-    }
 
     const searchField = new AutoCompletionField();
-    const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
+    game.searchAnywhere = searchField;
 
     document.onkeydown = function (evt) {
+        const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
         const cmd = game.settings.get('searchanywhere', 'settingCommand');
 
         if (evt.key === "Escape" && (searchField.visible || CommandMenu.visible)) {
@@ -109,8 +102,8 @@ Hooks.once('ready', () => {
         if (bind || (cmd === 'onShift' && bindWithShift)) {
             evt.stopPropagation();
             searchField.show(
-                game.i18n.localize(`SEARCHANYWHERE.searchHint`),
-                cmd === 'always' || (cmd === 'onShift' && bindWithShift)
+                    game.i18n.localize(`SEARCHANYWHERE.searchHint`),
+                    cmd === 'always' || (cmd === 'onShift' && bindWithShift)
             );
             return;
         }
@@ -130,9 +123,9 @@ Hooks.once('ready', () => {
             if (bindType || (cmd === 'onShift' && bindTypeWithShift)) {
                 evt.stopPropagation();
                 searchField.show(
-                    game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
-                    cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
-                    {"entityType": type }
+                        game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
+                        cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
+                        {"entityType": type }
                 );
                 return false;
             }
@@ -144,12 +137,18 @@ Hooks.once('ready', () => {
             searchField.hide();
         }
     };
+});
+
+Hooks.once('ready', () => {
+
+    const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+    if(hideShowForPlayers && !game.user.isGM) {
+        return;
+    }
 
     collectSheets(CONFIG.Actor).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Actor'));
     collectSheets(CONFIG.Item).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Item'));
     new DragHandler('renderJournalSheet', 'JournalEntry');
-
-    game.searchAnywhere = searchField;
 });
 
 collectSheets = function(entityType) {
@@ -362,7 +361,9 @@ class AutoCompletionField {
             });
             Hooks.on(`delete${entityType}`, (entity) => {
                 let suggestion = this.index.find(entity.id);
-                this.index.remove(suggestion);
+                if(suggestion) {
+                    this.index.remove(suggestion);
+                }
             });
         });
 
@@ -379,7 +380,7 @@ class AutoCompletionField {
 
             Loader.show("Building search indexes in progress, please wait...");
 
-            const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.entity));
+            const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.documentClass.documentName));
             Promise.allConcurrent(10)(supportedPacks.map(pack => () => pack.getIndex())).then(indexes => {
 
                 let suggestions = [].concat(
@@ -394,7 +395,7 @@ class AutoCompletionField {
                 indexes.forEach((index, idx) => {
                     suggestions = suggestions.concat(
                         index.map(
-                            entry => new CompendiumSuggestionData(entry, game.packs.entries[idx])
+                            entry => new CompendiumSuggestionData(entry, game.packs.contents[idx])
                         )
                     );
                 });
@@ -774,11 +775,11 @@ class EntitySuggestionData {
     }
 
     get icon() {
-        return SUGGESTION_ICON_TYPES[this.entity.entity];
+        return SUGGESTION_ICON_TYPES[this.entity.documentName];
     }
 
     get entityType() {
-        return this.entity.entity;
+        return this.entity.documentName;
     }
 
     get collection() {
@@ -791,7 +792,7 @@ class EntitySuggestionData {
             case 'JournalEntry': return 'modules/searchanywhere/icons/book.svg';
             case 'RollTable': return 'icons/svg/d20-grey.svg';
         }
-        return !this.entity.img || this.entity.img === DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entity.img;
+        return !this.entity.img || this.entity.img === CONST.DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entity.img;
     }
 
     allowed() {
@@ -906,7 +907,7 @@ class CompendiumSuggestionData {
     }
 
     get entityType() {
-        return this.pack.entity;
+        return this.pack.documentClass.documentName;
     }
 
     get collection() {
@@ -918,7 +919,7 @@ class CompendiumSuggestionData {
             case 'JournalEntry': return 'modules/searchanywhere/icons/book.svg';
             case 'RollTable': return 'icons/svg/d20-grey.svg';
         }
-        return !this.entry.img || this.entry.img === DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entry.img;
+        return !this.entry.img || this.entry.img === CONST.DEFAULT_TOKEN ? 'modules/searchanywhere/icons/mystery-man.svg' : this.entry.img;
     }
 
     allowed() {
@@ -952,7 +953,7 @@ class CompendiumSuggestionData {
     }
 
     render() {
-        this.pack.getEntity(this.entry._id)
+        this.pack.getDocument(this.entry._id)
             .then(entity => {
                 const sheet = entity.sheet;
                 sheet.options.editable = false;
@@ -998,8 +999,7 @@ class CompendiumSuggestionData {
     import() {
         this.pack.getEntity(this.entry._id)
             .then(entity => {
-                const packName = entity.compendium.collection;
-                entity.collection.importFromCollection(packName, entity._id);
+                entity.collection.importFromCompendium(this.pack, entity._id);
             })
             .catch(err => {
                 console.error(`Unable roll compendium table: ${err}`);
