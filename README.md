@@ -1,9 +1,12 @@
 # FoundryVTT Search Anywhere
 
 A FoundryVTT Module that adds a way to quickly search for any entity by name via a handy auto-complete widget.   
-Search Anywhere is specifically designed to streamline and speed up the search workflow using quick keyboard shortcuts.   
-hit ctrl+space (or the key combination you overwrote in the settings), navigate with the arrow keys the search elements, click enter to open the search menu, select the preferred option with the arrow keys and hit enter again: that's it.    
-Of course, you can always use the mouse, but I advise you to get used to the few keyboard commands, you won't regret it.
+Search Anywhere is specifically designed to streamline and speed up the search workflow using quick keyboard shortcuts.
+
+## Usage Instructions
+
+Hit <kbd>ctrl</kbd> + <kbd>space</kbd> (or the key combination you overwrote in the settings) and start typing. Select an entry using <kbd>up</kbd>/<kbd>down</kbd> arrow keys and hit <kbd>enter</kbd> to show the search menu. Select the preferred option with <kbd>up</kbd>/<kbd>down</kbd> arrow keys and hit <kbd>enter</kbd> again: that's it.
+Of course, you can always use the mouse, but I advise you to get used to the few keyboard commands, you won't regret it ;).
 
 ![Preview](/preview.gif?raw=true)
 
@@ -103,10 +106,6 @@ To install, follow these instructions:
 1.  Inside Foundry, select the Game Modules tab in the Configuration and Setup menu.
 2.  Click the Install Module button and enter the following URL: https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json
 3.  Click Install and wait for installation to complete
-
-## Usage Instructions
-
-Hit <kbd>ctrl</kbd> + <kbd>space</kbd> and start typing. Select an entry using <kbd>up</kbd>/<kbd>down</kbd> arrow keys and hit <kbd>enter</kbd> to show the selected sheet. 
 
 ## Compatibility
 
