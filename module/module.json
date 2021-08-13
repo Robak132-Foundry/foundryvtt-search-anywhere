@@ -26,6 +26,10 @@
 		"lang": "it",
 		"name": "Italian",
 		"path": "./lang/it.json"
+	}, {
+		"lang": "de",
+		"name": "Deutsch",
+		"path": "./lang/de.json"
 	}],
 	"url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
 	"manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
