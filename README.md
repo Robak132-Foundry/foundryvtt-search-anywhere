@@ -1,23 +1,53 @@
 # FoundryVTT Search Anywhere
 
-A FoundryVTT Module that adds a way to quickly search for any entity by name via a handy auto-complete widget.
+A FoundryVTT Module that adds a way to quickly search for any entity by name via a handy auto-complete widget.   
+Search Anywhere is specifically designed to streamline and speed up the search workflow using quick keyboard shortcuts.   
+hit ctrl+space (or the key combination you overwrote in the settings), navigate with the arrow keys the search elements, click enter to open the search menu, select the preferred option with the arrow keys and hit enter again: that's it.    
+Of course, you can always use the mouse, but I advise you to get used to the few keyboard commands, you won't regret it.
 
 ![Preview](/preview.gif?raw=true)
+
+If you use spotlight (or Alfred) on the mac, you can easily guess what this module is inspired by ;)
 
 Currently supports searchs over: 
 
 *  Actors (characters and NPCs)
 *  Items
 *  Scenes
-*  Journal
-*  Rollable tables
+*  Journals
+*  Rollable Tables
 *  Compendium
+*  Playlists
 
-## From version 1.1: Added the ability to drag the entity directly from the window!
+## From version 2.2.0:
 
-The module adds a small drag handler in the lower left corner of the window that allows to drag and drop directly from the opened sheet.
+**New contextual actions in the command menu**   
+   
+If there are opened sheets, you can use the search result by adding it directly through the context menu:
 
-![Preview](/preview-1.1..gif?raw=true)
+![Preview](/contextual-actions-actor.gif?raw=true)
+
+Similarly, if there is an opened roll table sheet:
+
+![Preview](/contextual-actions-table.gif?raw=true)
+
+And in any text editor in the foreground:
+
+![Preview](/contextual-actions-editor.gif?raw=true)
+
+**Exclude compendium/directories from the search**
+
+It is now possible to exclude compendium from the search: click on "Toggle Searching" in the right-click menu of the compendium you want to exclude:
+
+![Preview](/exclude-compendiums.gif?raw=true)
+
+Similarly, it is also possible to exclude directories from the search: click on "Toggle Searching" in the right-click menu that appears for the directory you want to exclude. It will exclude all its contents and the contents of other internal directories recursively:
+
+![Preview](/exclude-folders.gif?raw=true)
+
+For both, the icon of a magnifier with a minus sign indicates that that compendium/directory will be excluded from the search.   
+To re-include them in the search, select "Toggle Searching" again.   
+After an exclusion/inclusion operation, the search will be re-indexed.
 
 ## From version 2.0:
 
@@ -25,6 +55,10 @@ The module adds a small drag handler in the lower left corner of the window that
 - Search by multiple words, order independent.
 
 ![Preview](/multiple-word-search.gif?raw=true)
+
+- Search by assonance or similar words:
+
+![Preview](/similar-words.gif?raw=true)
 
 - Full text content search inside Journal Entries, Item description, Actor bio & Rollable Table description (world's entity only)
 - Better indication of the source of the suggestion (compendium/type).
@@ -43,6 +77,7 @@ The module adds a small drag handler in the lower left corner of the window that
 	- configure: only for Scenes, open the configuration sheet of the scene.
 	- open journal Note: only for Scenes, open the associated Journal Note.
 	- import: only for compendium entities, directly imports the selected entity in the world.
+    - play/stop: only for playlists, start or stop playing of the found playlist.
 	
 ![Preview](/import.gif?raw=true)	
 
@@ -51,7 +86,15 @@ The module adds a small drag handler in the lower left corner of the window that
 ![Preview](/roll-dice.gif?raw=true)
 
 - Disable search for players.	
-- Internationalization support.  
+- Internationalization support.
+
+## From version 1.1: Added the ability to drag the entity directly from the window!
+
+The module adds a small drag handler in the lower left corner of the window that allows to drag and drop directly from the opened sheet.
+
+![Preview](/preview-1.1..gif?raw=true)
+
+NEW: From version 2.2.0 it is possible to disable this function from the module settings
 
 ## Installation
 
