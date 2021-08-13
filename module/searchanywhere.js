@@ -1,4 +1,6 @@
 
+// Global Variables
+
 const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro', 'Playlist'];
 
 const SUGGESTION_ICON_TYPES = {
@@ -22,116 +24,109 @@ const SUGGESTION_KEYMAP_TYPES = {
     "Playlist": 'Ctrl + p'
 };
 
+/* -------------------------------------------- */
+/*  Hooks                                       */
+/* -------------------------------------------- */
+
+/**
+ * Settings & initialization
+ */
 Hooks.once('init', () => {
 
     game.settings.register('searchanywhere', 'settingKey', {
-        name: 'SEARCHANYWHERE.searchKeymap',
-        hint: 'SEARCHANYWHERE.searchKeymapHint',
-        type: window.Azzu.SettingsTypes.KeyBinding,
-        default: 'Ctrl +  ',
-        scope: 'client',
-        config: true
+      name: 'SEARCHANYWHERE.searchKeymap',
+      hint: 'SEARCHANYWHERE.searchKeymapHint',
+      type: window.Azzu.SettingsTypes.KeyBinding,
+      default: 'Ctrl +  ',
+      scope: 'client',
+      config: true
     });
 
     SEARCHABLE_ENTITY_TYPES.forEach(type => {
-        game.settings.register('searchanywhere', `setting${type}Key`, {
-            name: `SEARCHANYWHERE.search${type}Keymap`,
-            hint: `SEARCHANYWHERE.search${type}KeymapHint`,
-            type: window.Azzu.SettingsTypes.KeyBinding,
-            default: SUGGESTION_KEYMAP_TYPES[type],
-            scope: 'client',
-            config: true
-        });
+      game.settings.register('searchanywhere', `setting${type}Key`, {
+          name: `SEARCHANYWHERE.search${type}Keymap`,
+          hint: `SEARCHANYWHERE.search${type}KeymapHint`,
+          type: window.Azzu.SettingsTypes.KeyBinding,
+          default: SUGGESTION_KEYMAP_TYPES[type],
+          scope: 'client',
+          config: true
+      });
     });
 
     game.settings.register('searchanywhere', 'settingImage', {
-        name: 'SEARCHANYWHERE.image',
-        hint: 'SEARCHANYWHERE.imageHint',
-        type: Boolean,
-        default: true,
-        scope: 'client',
-        config: true
+      name: 'SEARCHANYWHERE.image',
+      hint: 'SEARCHANYWHERE.imageHint',
+      type: Boolean,
+      default: true,
+      scope: 'client',
+      config: true
     });
 
     game.settings.register('searchanywhere', 'settingPlayers', {
-        name: 'SEARCHANYWHERE.players',
-        hint: 'SEARCHANYWHERE.playersHint',
+      name: 'SEARCHANYWHERE.players',
+      hint: 'SEARCHANYWHERE.playersHint',
+      type: Boolean,
+      default: false,
+      scope: 'world',
+      config: true
+    });
+
+    game.settings.register('searchanywhere', 'settingCommand', {
+      name: 'SEARCHANYWHERE.command',
+      hint: 'SEARCHANYWHERE.commandHint',
+      type: String,
+      default: "always",
+      choices: {
+          "always": "SEARCHANYWHERE.commandAlways",
+          "onShift": "SEARCHANYWHERE.commandOnShift",
+          "never": "SEARCHANYWHERE.commandNever"
+      },
+      scope: 'world',
+      config: true
+    });
+
+    game.settings.register('searchanywhere', 'settingDragHandler', {
+        name: 'SEARCHANYWHERE.dragHandler',
+        hint: 'SEARCHANYWHERE.dragHandlerHint',
+        type: Boolean,
+        default: true,
+        scope: 'world',
+        config: true
+    });
+
+    /*game.settings.register('searchanywhere', 'hideToolbar', {
+        name: 'SEARCHANYWHERE.hideToolbar',
+        hint: 'SEARCHANYWHERE.hideToolbarHint',
         type: Boolean,
         default: false,
         scope: 'world',
         config: true
+    });*/
+
+    game.settings.register('searchanywhere', 'excludedPacks', {
+        type: Array,
+        default: [],
+        scope: 'world',
+        config: false,
+        onChange: () => {
+            ui.compendium.render();
+            game.searchAnywhere.clearIndex();
+        }
     });
 
-    game.settings.register('searchanywhere', 'settingCommand', {
-        name: 'SEARCHANYWHERE.command',
-        hint: 'SEARCHANYWHERE.commandHint',
-        type: String,
-        default: "always",
-        choices: {
-            "always": "SEARCHANYWHERE.commandAlways",
-            "onShift": "SEARCHANYWHERE.commandOnShift",
-            "never": "SEARCHANYWHERE.commandNever"
-        },
+    game.settings.register('searchanywhere', 'excludedFolders', {
+        type: Array,
+        default: [],
         scope: 'world',
-        config: true
+        config: false,
+        onChange: () => {
+            ui.sidebar.render();
+            game.searchAnywhere.clearIndex();
+        }
     });
 
     const searchField = new AutoCompletionField();
     game.searchAnywhere = searchField;
-
-    document.onkeydown = function (evt) {
-        const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
-        const cmd = game.settings.get('searchanywhere', 'settingCommand');
-
-        if (evt.key === "Escape" && (searchField.visible || CommandMenu.visible)) {
-            evt.stopPropagation();
-            searchField.hide();
-            CommandMenu.dispose();
-            return;
-        }
-
-        let stringValue = game.settings.get('searchanywhere', 'settingKey');
-        if (stringValue.endsWith("+")) {
-            stringValue = stringValue + "  ";
-        }
-
-        const parsedValue = KeyBinding.parse(stringValue);
-        const withShift = KeyBinding.parse('Shift + ' + stringValue);
-        const bind = KeyBinding.eventIsForBinding(evt, parsedValue);
-        const bindWithShift = KeyBinding.eventIsForBinding(evt, withShift);
-
-        if (bind || (cmd === 'onShift' && bindWithShift)) {
-            evt.stopPropagation();
-            searchField.show(
-                    game.i18n.localize(`SEARCHANYWHERE.searchHint`),
-                    cmd === 'always' || (cmd === 'onShift' && bindWithShift)
-            );
-            return;
-        }
-
-        SEARCHABLE_ENTITY_TYPES.forEach(type => {
-            let stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
-            if (stringTypeValue.endsWith("+")) {
-                stringTypeValue = stringTypeValue + "  ";
-            }
-
-            const parsedTypeValue = KeyBinding.parse(stringTypeValue);
-            const withShiftType = KeyBinding.parse('Shift + ' + stringTypeValue);
-
-            const bindType = KeyBinding.eventIsForBinding(evt, parsedTypeValue);
-            const bindTypeWithShift = KeyBinding.eventIsForBinding(evt, withShiftType);
-
-            if (bindType || (cmd === 'onShift' && bindTypeWithShift)) {
-                evt.stopPropagation();
-                searchField.show(
-                        game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
-                        cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
-                        {"entityType": type }
-                );
-                return false;
-            }
-        });
-    };
 
     window.onclick = function (evt) {
         if (evt.target === searchField.modal) {
@@ -140,170 +135,320 @@ Hooks.once('init', () => {
     };
 });
 
-Hooks.once('ready', () => {
+/* -------------------------------------------- */
+
+/**
+ * Synchronize the currently opened character sheets
+ */
+Hooks.on("renderActorSheet", (sheet, html, data) => {
 
     const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
     if(hideShowForPlayers && !game.user.isGM) {
+      return;
+    }
+
+    game.searchAnywhere.openedSheets.set(sheet.appId, sheet);
+});
+
+/**
+ * Synchronize the currently closed character sheets
+ */
+Hooks.on("closeActorSheet", (sheet) => {
+    game.searchAnywhere.openedSheets.delete(sheet.appId);
+});
+
+/**
+ * Synchronize the currently opened roll tables
+ */
+Hooks.on("renderRollTableConfig", (sheet) => {
+    game.searchAnywhere.openedTables.set(sheet.appId, sheet);
+});
+
+/**
+ * Synchronize the currently closed roll tables
+ */
+Hooks.on("closeRollTableConfig", (sheet) => {
+    game.searchAnywhere.openedTables.delete(sheet.appId);
+});
+
+/* -------------------------------------------- */
+
+["Actor", "Item", "Journal"].forEach(entry => {
+
+    /**
+     * Adds a Drag & Drop handler for entity sheets
+     */
+    Hooks.on(`render${entry}Sheet`, (sheet, html, data) => {
+
+        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+        if(hideShowForPlayers && !game.user.isGM) {
+            return;
+        }
+
+        const addHandler = game.settings.get('searchanywhere', 'settingDragHandler');
+        if (addHandler) {
+            let entity = sheet.document.entity;
+            if (["Actor", "Item", "JournalEntry"].includes(entity)) {
+                sheet.dragHandler = new DragHandler(entity, sheet, html);
+            }
+        }
+    });
+
+    /**
+     * Removes the Drag & Drop handler, if present
+     */
+    Hooks.on(`close${entry}Sheet`, (sheet) => {
+        sheet.dragHandler?.dispose();
+    });
+});
+
+/* -------------------------------------------- */
+
+/**
+ * Adds 'Toggle Searching' to the compendium directory context menu
+ */
+Hooks.on("getCompendiumDirectoryEntryContext", (html, entryOptions) => {
+
+    if(!game.user.isGM) {
         return;
     }
 
-    collectSheets(CONFIG.Actor).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Actor'));
-    collectSheets(CONFIG.Item).forEach(sheetClass => new DragHandler(`render${sheetClass}`, 'Item'));
-    new DragHandler('renderJournalSheet', 'JournalEntry');
+    entryOptions.push({
+        name: "SEARCHANYWHERE.toggleSearching",
+        icon: "<i class=\"fas fa-search\"></i>",
+        callback: (li) => {
+            const pack = li.data("pack");
+            const excludedPacks = game.settings.get('searchanywhere', 'excludedPacks');
+            if(excludedPacks.includes(pack)) {
+                const index = excludedPacks.indexOf(pack);
+                if (index > -1) {
+                    excludedPacks.splice(index, 1);
+                }
+            } else {
+                excludedPacks.push(pack);
+            }
+            game.settings.set("searchanywhere", "excludedPacks", excludedPacks);
+        }
+    });
 });
 
-collectSheets = function(entityType) {
-    let sheetClasses = [];
-    const entities = Object.values(entityType.sheetClasses);
-    for (let entity of entities) {
-        const entitySheets = Object.values(entity);
-        for (let sheet of entitySheets) {
-            const sheetClass = sheet.id.split(".")[1];
-            if(!sheetClasses.includes(sheetClass)) {
-                sheetClasses.push(sheetClass);
-            }
+/**
+ * Adds an excluded search icon indicator to the compendium item.
+ */
+Hooks.on("renderCompendiumDirectory", (dir, html) => {
+    let excludedPacks = game.settings.get('searchanywhere', 'excludedPacks');
+    html.find("li.compendium-pack").each(function () {
+        const pack = $(this).data("pack");
+        if(excludedPacks.includes(pack)) {
+            $(this).find(".status-icons").append(
+                '<i class="fas fa-search-minus"></i>'
+            );
         }
+    })
+});
+
+/**
+ * Adds 'Toggle Searching' to every folder context menu
+ */
+Hooks.on("getSidebarDirectoryFolderContext", (html, entryOptions) => {
+
+    if(!game.user.isGM) {
+        return;
     }
-    return sheetClasses;
-};
+
+    entryOptions.push({
+        name: "SEARCHANYWHERE.toggleSearching",
+        icon: "<i class=\"fas fa-search\"></i>",
+        callback: (header) => {
+            const li = header.parent()[0];
+            const folderId = li.dataset.folderId;
+            const excludedFolders = game.settings.get('searchanywhere', 'excludedFolders');
+            if(excludedFolders.includes(folderId)) {
+                const index = excludedFolders.indexOf(folderId);
+                if (index > -1) {
+                    excludedFolders.splice(index, 1);
+                }
+            } else {
+                excludedFolders.push(folderId);
+            }
+            game.settings.set("searchanywhere", "excludedFolders", excludedFolders);
+        }
+    });
+});
+
+/**
+ * Adds an excluded search icon indicator to the compendium item.
+ */
+Hooks.on("renderSidebarDirectory", (dir, html) => {
+    const excludedFolders = game.settings.get('searchanywhere', 'excludedFolders');
+    html.find("li.directory-item").each(function () {
+        const folderId = $(this)[0].dataset.folderId;
+        if(excludedFolders.includes(folderId)) {
+            $(this).find(".folder-header:first").append(
+                '<i class="fas fa-search-minus" style="flex: 0; margin: 5px 4px 0 5px;"</i>'
+            );
+        }
+    })
+});
+
+/* -------------------------------------------- */
+/*  Utilities                                   */
+/* -------------------------------------------- */
 
 copyToClipboard = function(str) {
-    const el = document.createElement('textarea');
-    el.value = str;
-    el.setAttribute('readonly', '');
-    el.style.position = 'absolute';
-    el.style.left = '-9999px';
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
+  const el = document.createElement('textarea');
+  el.value = str;
+  el.setAttribute('readonly', '');
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
 };
 
 safeGet = function(obj, path) {
-    if (!obj) return null;
-    if (!path) return obj;
+  if (!obj) return null;
+  if (!path) return obj;
 
-    const splitPath = path.split('.');
-    const nextObj = obj[splitPath[0]];
+  const splitPath = path.split('.');
+  const nextObj = obj[splitPath[0]];
 
-    if (nextObj) {
-        if (splitPath.length === 1) return nextObj;
+  if (nextObj) {
+      if (splitPath.length === 1) return nextObj;
 
-        const remainingPath = splitPath.slice(1).join('.');
-        return safeGet(nextObj, remainingPath);
-    }
+      const remainingPath = splitPath.slice(1).join('.');
+      return safeGet(nextObj, remainingPath);
+  }
 
-    return null;
+  return null;
 };
 
 stripHtml = function(html) {
-    if (!html) return "";
+  if (!html) return "";
 
-    return $("<div>").html(html).text();
+  return $("<div>").html(html).text();
 };
 
 function promiseAllStepN(n, list) {
-    let tail = list.splice(n);
-    let head = list;
-    let resolved = [];
-    let processed = 0;
-    return new Promise(resolve=>{
-        head.forEach( x => {
-            let res = x();
-            resolved.push(res);
-            res.then(y => {
-                runNext();
-                return y
-            })
-        });
-        function runNext(){
-            if(processed === tail.length) {
-                resolve(Promise.all(resolved))
-            } else {
-                resolved.push(tail[processed]().then(x=>{
-                    runNext();
-                    return x
-                }));
-                processed++
-            }
-        }
-    })
+  let tail = list.splice(n);
+  let head = list;
+  let resolved = [];
+  let processed = 0;
+  return new Promise(resolve=>{
+      head.forEach( x => {
+          let res = x();
+          resolved.push(res);
+          res.then(y => {
+              runNext();
+              return y
+          })
+      });
+      function runNext(){
+          if(processed === tail.length) {
+              resolve(Promise.all(resolved))
+          } else {
+              resolved.push(tail[processed]().then(x=>{
+                  runNext();
+                  return x
+              }));
+              processed++
+          }
+      }
+  })
 }
+
 Promise.allConcurrent = n => list =>  promiseAllStepN(n, list);
+
+/* -------------------------------------------- */
+/*  Main Classes                                */
+/* -------------------------------------------- */
 
 class Loader {
 
-    static show(message) {
-        const loader = $(
-            `<div id="index-loader" class="loader-overlay">
-                <div class="loader-container">
-                    <div class="loader-spinner"></div>
-                    <div class="loader-text">${message}</div>
-                </div>
-            </div>`
-        );
+  static show(message) {
+      const loader = $(
+          `<div id="index-loader" class="loader-overlay">
+              <div class="loader-container">
+                  <div class="loader-spinner"></div>
+                  <div class="loader-text">${message}</div>
+              </div>
+          </div>`
+      );
 
-        loader.appendTo($('body'));
-    }
+      loader.appendTo($('body'));
+  }
 
-    static hide() {
-        $('#index-loader').remove();
-    }
+  static hide() {
+      $('#index-loader').remove();
+  }
 }
 
 class DragHandler {
 
-    constructor(hook, type, query) {
-        Hooks.on(hook, this.handle.bind(this));
-        this.type = type;
-    }
+  constructor(type, app, html) {
+      this.type = type;
+      this.handle(app, html);
+  }
 
-    handle(app, html, data) {
+  handle(app, html) {
 
-        const handle = $(
-            `<div class="window-draggable-handle">
-                <i class="fas fa-hand-rock" draggable="true"></i>
-            </div>`
-        );
+      const handle = $(
+          `<div class="window-draggable-handle" style="z-index: 1;">
+              <i class="fas fa-hand-rock" draggable="true"></i>
+          </div>`
+      );
 
-        const header = html.parent().parent().find(".window-header");
-        header.after(handle);
+      const header = html.find(".window-header");
+      header.after(handle);
 
-        const img = handle.find('i')[0];
-        img.addEventListener('dragstart', evt => {
-            evt.stopPropagation();
-            let toTransfer;
-            if(data.options.compendium) {
-                let pack = game.packs.find(p => p.collection === data.options.compendium);
-                toTransfer = {
-                    type: pack.entity,
-                    pack: pack.collection,
-                    id: this.type === 'Actor' ? data.actor._id : data.entity._id
-                };
-            } else {
-                toTransfer = {
-                    type: this.type,
-                    id: this.type === 'Actor' ? data.actor._id : data.entity._id
-                };
-            }
+      const img = handle.find('i')[0];
+      img.addEventListener('dragstart', evt => {
+          evt.stopPropagation();
+          let toTransfer = {
+              type: this.type,
+              pack: app.document.pack,
+              id: app.document._id
+          };
+          evt.dataTransfer.setData("text/plain", JSON.stringify(toTransfer));
+      }, false);
 
-            evt.dataTransfer.setData("text/plain", JSON.stringify(toTransfer));
-        }, false);
-    }
+      function callback(mutationsList, observer) {
+          mutationsList.forEach(mutation => {
+              if (mutation.attributeName === 'class') {
+                  if($(mutation.target).attr('class').indexOf('minimized') !== -1) {
+                      handle.hide();
+                  } else {
+                      handle.show();
+                  }
+              }
+          });
+      }
+
+      this.mutationObserver = new MutationObserver(callback);
+      this.mutationObserver.observe(app.element[0], { attributes: true });
+  }
+
+  dispose() {
+      this.mutationObserver.disconnect();
+  }
 }
 
 class AutoCompletionField {
 
-    constructor() {
-        this._createIndex();
-        this._buildHtml();
-        this.buffer = null;
-    }
+  constructor() {
+      this._createIndex();
+      this._buildHtml();
+      this.buffer = null;
+      this.openedSheets = new Map();
+      this.openedTables = new Map();
+      this._bindKeyEvents();
+  }
 
-    /**
-     *
-     * @private
-     */
+  /**
+   *
+   * @private
+   */
     _createIndex() {
         this.index = new FlexSearch({
             encode: "simple",
@@ -326,7 +471,7 @@ class AutoCompletionField {
      */
     _buildHtml() {
         const modalHtml = $(
-            '<div id="search-anywhere-modal" class="modal">' +
+            '<div id="search-anywhere-modal" class="sa-modal">' +
             '<div class="modal-content">' +
             '<input id="search-anywhere-autocomplete" type="text" placeholder="Search...">' +
             '</div>' +
@@ -355,10 +500,14 @@ class AutoCompletionField {
 
         SEARCHABLE_ENTITY_TYPES.forEach(entityType => {
             Hooks.on(`create${entityType}`, (entity) => {
-                this.index.add(new EntitySuggestionData(entity, entityType));
+                if(!this._excluded(entity)) {
+                    this.index.add(new EntitySuggestionData(entity, entityType));
+                }
             });
             Hooks.on(`update${entityType}`, (entity) => {
-                this.index.update(new EntitySuggestionData(entity, entityType));
+                if(!this._excluded(entity)) {
+                    this.index.update(new EntitySuggestionData(entity, entityType));
+                }
             });
             Hooks.on(`delete${entityType}`, (entity) => {
                 let suggestion = this.index.find(entity.id);
@@ -371,6 +520,78 @@ class AutoCompletionField {
         this.visible = false;
     }
 
+    _bindKeyEvents() {
+        let onKeyEvent = this._onKeyEvent.bind(this);
+        document.onkeydown = onKeyEvent;
+        tinymce.PluginManager.add("searchanywhere", function (editor) {
+            editor.on("keydown", function (evt) {
+                onKeyEvent(evt);
+                game.searchAnywhere.editor = editor;
+            }.bind(this));
+        });
+        CONFIG.TinyMCE.plugins = CONFIG.TinyMCE.plugins + " searchanywhere";
+    }
+
+    _onKeyEvent(evt) {
+
+        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+        if(hideShowForPlayers && !game.user.isGM) {
+            return;
+        }
+
+        const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
+        const cmd = game.settings.get('searchanywhere', 'settingCommand');
+
+        if (evt.key === "Escape" && (this.visible || CommandMenu.visible)) {
+            evt.stopPropagation();
+            this.hide();
+            CommandMenu.dispose();
+            return;
+        }
+
+        let stringValue = game.settings.get('searchanywhere', 'settingKey');
+        if (stringValue.endsWith("+")) {
+            stringValue = stringValue + "  ";
+        }
+
+        const parsedValue = KeyBinding.parse(stringValue);
+        const withShift = KeyBinding.parse('Shift + ' + stringValue);
+        const bind = KeyBinding.eventIsForBinding(evt, parsedValue);
+        const bindWithShift = KeyBinding.eventIsForBinding(evt, withShift);
+
+        if (bind || (cmd === 'onShift' && bindWithShift)) {
+            evt.stopPropagation();
+            this.show(
+                game.i18n.localize(`SEARCHANYWHERE.searchHint`),
+                cmd === 'always' || (cmd === 'onShift' && bindWithShift)
+            );
+            return;
+        }
+
+        SEARCHABLE_ENTITY_TYPES.forEach(type => {
+            let stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
+            if (stringTypeValue.endsWith("+")) {
+                stringTypeValue = stringTypeValue + "  ";
+            }
+
+            const parsedTypeValue = KeyBinding.parse(stringTypeValue);
+            const withShiftType = KeyBinding.parse('Shift + ' + stringTypeValue);
+
+            const bindType = KeyBinding.eventIsForBinding(evt, parsedTypeValue);
+            const bindTypeWithShift = KeyBinding.eventIsForBinding(evt, withShiftType);
+
+            if (bindType || (cmd === 'onShift' && bindTypeWithShift)) {
+                evt.stopPropagation();
+                this.show(
+                    game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
+                    cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
+                    {"entityType": type }
+                );
+                return false;
+            }
+        });
+    }
+
     /**
      *
      * @private
@@ -379,25 +600,30 @@ class AutoCompletionField {
         this.indexBuilding = true;
         return new Promise((resolve, reject) => {
 
-            Loader.show("Building search indexes in progress, please wait...");
+            Loader.show(game.i18n.localize(`SEARCHANYWHERE.waitMessage`));
 
-            //const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.documentClass.documentName));
-            Promise.allConcurrent(10)(game.packs.map(pack => () => pack.getIndex())).then(indexes => {
+            const excludedPacks = game.settings.get('searchanywhere', 'excludedPacks');
+            const packs = game.packs.filter(pack => !excludedPacks.includes(pack.collection));
+            Promise.allConcurrent(10)(packs.map(pack => () => pack.getIndex())).then(indexes => {
 
-                let suggestions = [].concat(
-                    game.actors.map(entity => new EntitySuggestionData(entity)),
-                    game.items.map(entity => new EntitySuggestionData(entity)),
-                    game.scenes.map(entity => new EntitySuggestionData(entity)),
-                    game.journal.map(entity => new EntitySuggestionData(entity)),
-                    game.tables.map(entity => new EntitySuggestionData(entity)),
-                    game.macros.map(entity => new EntitySuggestionData(entity)),
-                    game.playlists.map(entity => new EntitySuggestionData(entity))
-                );
+                let entities = [].concat(
+                    game.actors.contents,
+                    game.items.contents,
+                    game.scenes.contents,
+                    game.journal.contents,
+                    game.tables.contents,
+                    game.macros.contents,
+                    game.playlists.contents
+                )
+
+                let suggestions = entities
+                    .filter(entity => !this._excluded(entity))
+                    .map(entity => new EntitySuggestionData(entity));
 
                 indexes.forEach((index, idx) => {
                     suggestions = suggestions.concat(
                         index.map(
-                            entry => new CompendiumSuggestionData(entry, game.packs.contents[idx])
+                            entry => new CompendiumSuggestionData(entry, packs[idx])
                         )
                     );
                 });
@@ -411,7 +637,6 @@ class AutoCompletionField {
 
                 resolve(true);
 
-
             }).catch(err => {
                 this.indexBuilding = false;
                 Loader.hide();
@@ -422,11 +647,30 @@ class AutoCompletionField {
     }
 
     /**
+     * Recursively search if the entity belongs to an excluded folder.
+     *
+     * @param entity
+     * @returns {boolean}
+     * @private
+     */
+    _excluded(entity) {
+        const excludedFolders = game.settings.get('searchanywhere', 'excludedFolders');
+        let excluded = false;
+        let folder = entity.folder;
+        while (folder !== null && !excluded) {
+            excluded = excludedFolders.includes(folder.id);
+            folder = folder.data.parent ? game.folders.get(folder.data.parent) : null;
+        }
+        return excluded;
+    }
+
+    /**
      *
      */
-    rebuildIndex() {
+    clearIndex() {
         this.index.clear();
-        this._buildIndex();
+        this._createIndex();
+        this.isIndexBuilt = false;
     }
 
     /**
@@ -435,11 +679,6 @@ class AutoCompletionField {
     show(hint, openCmd, filter) {
 
         let _show = () => {
-            const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-            if(hideShowForPlayers && !game.user.isGM) {
-                return;
-            }
-
             this.modal.style.display = "block";
             this.input.value = '';
             this.input.focus();
@@ -685,9 +924,16 @@ class CommandMenu {
     _buildHtml() {
         const html = $(
             `<ul class="command-menu">
-            ${this.suggestion.commands.map((cmd, i) =>
-                `<li class="${i===0?'selected':''}" data-cmd-id="${cmd.id}"><h2>${game.i18n.localize(cmd.label)}</h2></li>`
-            ).join('')}
+            ${this.suggestion.commands.map((cmd, i) => {
+                let label;
+                if(cmd.label.indexOf(":")) {
+                    let value = cmd.label.split(":");
+                    label = game.i18n.format(value[0], { value: value[1]});
+                } else {
+                    label = game.i18n.localize(cmd.label);
+                }
+                return `<li class="${i===0?'selected':''}" data-cmd-id="${cmd.id}"><h2>${label}</h2></li>`
+            }).join('')}
             </ul>`
         );
         html.appendTo($('body'));
@@ -732,7 +978,12 @@ class CommandMenu {
 
     _onSelect() {
         const cmdId = this.selected.attr('data-cmd-id');
-        this.suggestion[cmdId]();
+        if(cmdId.indexOf(":")) {
+            let cmd = cmdId.split(":");
+            this.suggestion[cmd[0]](cmd[1]);
+        } else {
+            this.suggestion[cmdId]();
+        }
         CommandMenu.dispose();
     }
 
@@ -744,6 +995,7 @@ class CommandMenu {
     dispose() {
         $(window).off(".command-menu");
         $(".command-menu" ).remove();
+        game.searchAnywhere.editor = null;
     }
 
 }
@@ -803,9 +1055,31 @@ class EntitySuggestionData {
     }
 
     get commands() {
-        let commands = [{
+        let commands = [];
+
+        if(game.searchAnywhere.editor) {
+            commands.push({
+                id: `toEditor`, label: `SEARCHANYWHERE.commandToEditor`
+            })
+        }
+
+        if(this.entityType === "Item") {
+            game.searchAnywhere.openedSheets.forEach((value, key) => {
+                commands.push({
+                    id: `toSheet:${key}`, label: `SEARCHANYWHERE.commandToSheet:${value.actor.name}`
+                })
+            });
+        }
+
+        game.searchAnywhere.openedTables.forEach((value, key) => {
+            commands.push({
+                id: `toTable:${key}`, label: `SEARCHANYWHERE.commandToTable:${value.entity.name}`
+            })
+        });
+
+        commands.push({
             id: 'render', label: 'SEARCHANYWHERE.commandOpen'
-        }];
+        });
 
         if(this.entityType !== "Playlist") {
             commands.push({
@@ -853,6 +1127,31 @@ class EntitySuggestionData {
         }
 
         return commands;
+    }
+
+    toEditor() {
+        let editor = game.searchAnywhere.editor;
+        if(editor) {
+            editor.insertContent(this._formatReference());
+            editor.focus();
+        }
+    }
+
+    toSheet(sheetTd) {
+        let sheet = game.searchAnywhere.openedSheets.get(parseInt(sheetTd));
+        sheet.actor.createEmbeddedDocuments("Item", [this.entity.data.toJSON()]);
+    }
+
+    toTable(sheetTd) {
+        let sheet = game.searchAnywhere.openedTables.get(parseInt(sheetTd));
+        let fakeEvt = { preventDefault: function() {}};
+        sheet._onCreateResult(fakeEvt, {
+            type: CONST.TABLE_RESULT_TYPES.ENTITY,
+            collection: this.entity.entity,
+            text: this.entity.name,
+            resultId: this.entity.id,
+            img: this.entity.data.img || null
+        });
     }
 
     render() {
@@ -955,15 +1254,41 @@ class CompendiumSuggestionData {
     }
 
     get commands() {
-        let commands = [{
+
+        let commands = [];
+
+        if(game.searchAnywhere.editor) {
+            commands.push({
+                id: `toEditor`, label: `SEARCHANYWHERE.commandToEditor`
+            })
+        }
+
+        if(this.entityType === "Item") {
+            game.searchAnywhere.openedSheets.forEach((value, key) => {
+                commands.push({
+                    id: `toSheet:${key}`, label: `SEARCHANYWHERE.commandToSheet:${value.actor.name}`
+                })
+            });
+        }
+
+        game.searchAnywhere.openedTables.forEach((value, key) => {
+            commands.push({
+                id: `toTable:${key}`, label: `SEARCHANYWHERE.commandToTable:${value.entity.name}`
+            })
+        });
+
+        commands.push({
             id: 'render', label: 'SEARCHANYWHERE.commandOpen'
-        }, {
+        });
+        commands.push({
             id: 'copy', label: 'SEARCHANYWHERE.commandCopy'
-        }, {
+        });
+        commands.push({
             id: 'message', label: 'SEARCHANYWHERE.commandChat'
-        }, {
+        });
+        commands.push({
             id: 'import', label: 'SEARCHANYWHERE.commandImport'
-        }];
+        });
 
         if(this.entityType === 'Macro') {
             commands.push({
@@ -978,6 +1303,43 @@ class CompendiumSuggestionData {
         }
 
         return commands;
+    }
+
+    toEditor() {
+        let editor = game.searchAnywhere.editor;
+        if(editor) {
+            editor.insertContent(this._formatReference());
+            editor.focus();
+        }
+    }
+
+    toSheet(sheetTd) {
+        this.pack.getDocument(this.entry._id)
+            .then(entity => {
+                let sheet = game.searchAnywhere.openedSheets.get(parseInt(sheetTd));
+                sheet.actor.createEmbeddedDocuments("Item", [entity.data.toJSON()]);
+            })
+            .catch(err => {
+                console.error(`Unable to add compendium item to sheet: ${err}`);
+            });
+    }
+
+    toTable(sheetTd) {
+        this.pack.getDocument(this.entry._id)
+            .then(entity => {
+                let sheet = game.searchAnywhere.openedTables.get(parseInt(sheetTd));
+                let fakeEvt = { preventDefault: function() {}};
+                sheet._onCreateResult(fakeEvt, {
+                    type: CONST.TABLE_RESULT_TYPES.COMPENDIUM,
+                    collection: this.pack.collection,
+                    text: entity.name,
+                    resultId: entity.id,
+                    img: entity.data.img || null
+                });
+            })
+            .catch(err => {
+                console.error(`Unable to add compendium item to sheet: ${err}`);
+            });
     }
 
     render() {

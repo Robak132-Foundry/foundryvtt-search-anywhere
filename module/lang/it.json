@@ -13,6 +13,8 @@
     "SEARCHANYWHERE.searchSceneKeymapHint": "Immettere la mappatura tasti per visualizzare la barra di ricerca per scena",
     "SEARCHANYWHERE.searchMacroKeymap": "Mapp. Tasti Ricerca Macro",
     "SEARCHANYWHERE.searchMacroKeymapHint": "Immettere la mappatura tasti utilizzata per visualizzare la barra di ricerca filtrata per macro",
+    "SEARCHANYWHERE.searchPlaylistKeymap": "Mapp. Tasti Playlist",
+    "SEARCHANYWHERE.searchPlaylistKeymapHint": "Immettere la mappatura tasti utilizzata per visualizzare la barra di ricerca filtrata per playlist",
     "SEARCHANYWHERE.players": "Disabilita la ricerca per i giocatori",
     "SEARCHANYWHERE.playersHint": "Se abilitato, i tuoi giocatori non saranno in grado di effettuare ricerche",
     "SEARCHANYWHERE.image": "Mostra immagine di anteprima nei risultati di ricerca",
@@ -22,6 +24,8 @@
     "SEARCHANYWHERE.commandAlways": "Sempre",
     "SEARCHANYWHERE.commandOnShift": "Aggiungendo 'Shift' alla sequenza di tasti",
     "SEARCHANYWHERE.commandNever": "Mai, alla selezione aprire la scheda",
+    "SEARCHANYWHERE.dragHandler": "Aggiunge un gestore di trascinamento",
+    "SEARCHANYWHERE.dragHandlerHint": "Se abilitato, aggiunge la possibilità di fare drag & drop direttamente dalla scheda mediante una piccola icona raffigurante un pugno in basso a sinistra",
     "SEARCHANYWHERE.commandOpen": "Apri",
     "SEARCHANYWHERE.commandCopy": "Copia riferimento",
     "SEARCHANYWHERE.commandChat": "Invia riferimento alla chat",
@@ -33,6 +37,9 @@
     "SEARCHANYWHERE.commandImport": "Importa",
     "SEARCHANYWHERE.commandPlay": "Riproduci",
     "SEARCHANYWHERE.commandStop": "Arresta",
+    "SEARCHANYWHERE.commandToSheet": "Aggiungi alla scheda di {value}",
+    "SEARCHANYWHERE.commandToTable": "Aggiungi alla tabella {value}",
+    "SEARCHANYWHERE.commandToEditor": "Inserisci riferimento nell'editor di testo",
     "SEARCHANYWHERE.searchHint": "Cerca...",
     "SEARCHANYWHERE.searchActorHint": "Cerca personaggio...",
     "SEARCHANYWHERE.searchItemHint": "Cerca oggetto...",
@@ -46,6 +53,13 @@
     "SEARCHANYWHERE.descRollTable": "Tabella",
     "SEARCHANYWHERE.descScene": "Scena",
     "SEARCHANYWHERE.descMacro": "Macro",
+    "SEARCHANYWHERE.descPlaylist": "Playlist",
     "SEARCHANYWHERE.copyMessage": "Il riferimento all'entità è stato copiato correttamente negli Appunti",
-    "SEARCHANYWHERE.noJournalNote": "Non ci sono note associate alla scena"
+    "SEARCHANYWHERE.noJournalNote": "Non ci sono note associate alla scena",
+    "SEARCHANYWHERE.toggleSearching": "Attiva/Disattiva Ricerca",
+    "SEARCHANYWHERE.waitMessage": "Creazione indici di ricerca in corso, attendere prego...",
+    "SEARCHANYWHERE.showSearchBar": "Mostra barra di ricerca",
+    "SEARCHANYWHERE.hideToolbar": "Nascondi i Comandi Toolbar",
+    "SEARCHANYWHERE.hideToolbarHint": "Mon mostrare i comandi per aprire la barra di ricerca nella toolbar della scena"
+
 }
