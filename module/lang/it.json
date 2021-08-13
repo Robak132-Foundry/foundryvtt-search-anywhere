@@ -31,6 +31,8 @@
     "SEARCHANYWHERE.commandNote": "Apri nota",
     "SEARCHANYWHERE.commandRoll": "Effettua un tiro",
     "SEARCHANYWHERE.commandImport": "Importa",
+    "SEARCHANYWHERE.commandPlay": "Riproduci",
+    "SEARCHANYWHERE.commandStop": "Arresta",
     "SEARCHANYWHERE.searchHint": "Cerca...",
     "SEARCHANYWHERE.searchActorHint": "Cerca personaggio...",
     "SEARCHANYWHERE.searchItemHint": "Cerca oggetto...",

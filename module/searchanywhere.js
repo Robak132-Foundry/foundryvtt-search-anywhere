@@ -1,5 +1,5 @@
 
-const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro'];
+const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro', 'Playlist'];
 
 const SUGGESTION_ICON_TYPES = {
     "Actor": 'fas fa-users',
@@ -8,7 +8,8 @@ const SUGGESTION_ICON_TYPES = {
     "JournalEntry": 'fas fa-book-open',
     "RollTable": 'fas fa-th-list',
     "Macro": 'fas fa-terminal',
-    "COMPENDIUM": 'fas fa-atlas'
+    "COMPENDIUM": 'fas fa-atlas',
+    "Playlist": 'fas fa-music'
 };
 
 const SUGGESTION_KEYMAP_TYPES = {
@@ -18,7 +19,7 @@ const SUGGESTION_KEYMAP_TYPES = {
     "JournalEntry": 'Ctrl + j',
     "RollTable": 'Ctrl + r',
     "Macro": 'Ctrl + m',
-    "COMPENDIUM": 'fas fa-atlas'
+    "Playlist": 'Ctrl + p'
 };
 
 Hooks.once('init', () => {
@@ -380,8 +381,8 @@ class AutoCompletionField {
 
             Loader.show("Building search indexes in progress, please wait...");
 
-            const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.documentClass.documentName));
-            Promise.allConcurrent(10)(supportedPacks.map(pack => () => pack.getIndex())).then(indexes => {
+            //const supportedPacks = game.packs.filter(pack => !['Scene', 'Playlist'].includes(pack.documentClass.documentName));
+            Promise.allConcurrent(10)(game.packs.map(pack => () => pack.getIndex())).then(indexes => {
 
                 let suggestions = [].concat(
                     game.actors.map(entity => new EntitySuggestionData(entity)),
@@ -389,7 +390,8 @@ class AutoCompletionField {
                     game.scenes.map(entity => new EntitySuggestionData(entity)),
                     game.journal.map(entity => new EntitySuggestionData(entity)),
                     game.tables.map(entity => new EntitySuggestionData(entity)),
-                    game.macros.map(entity => new EntitySuggestionData(entity))
+                    game.macros.map(entity => new EntitySuggestionData(entity)),
+                    game.playlists.map(entity => new EntitySuggestionData(entity))
                 );
 
                 indexes.forEach((index, idx) => {
@@ -770,6 +772,7 @@ class EntitySuggestionData {
             case 'Item': content = safeGet(this.entity, 'data.data.description.value'); break;
             case 'JournalEntry': content = safeGet(this.entity, 'data.content'); break;
             case 'RollTable': content = safeGet(this.entity, 'data.content'); break;
+            case 'Playlist': content = safeGet(this.entity, 'data.description'); break;
         }
         return stripHtml(content);
     }
@@ -802,11 +805,16 @@ class EntitySuggestionData {
     get commands() {
         let commands = [{
             id: 'render', label: 'SEARCHANYWHERE.commandOpen'
-        }, {
-            id: 'copy', label: 'SEARCHANYWHERE.commandCopy'
-        }, {
-            id: 'message', label: 'SEARCHANYWHERE.commandChat'
         }];
+
+        if(this.entityType !== "Playlist") {
+            commands.push({
+                id: 'copy', label: 'SEARCHANYWHERE.commandCopy'
+            });
+            commands.push({
+                id: 'message', label: 'SEARCHANYWHERE.commandChat'
+            });
+        }
 
         if(this.entityType === 'Macro') {
             commands.push({
@@ -830,6 +838,18 @@ class EntitySuggestionData {
             commands.push({
                 id: 'roll', label: 'SEARCHANYWHERE.commandRoll'
             });
+        }
+
+        if(this.entityType === 'Playlist') {
+            if(this.entity.playing) {
+                commands.push({
+                    id: 'stop', label: 'SEARCHANYWHERE.commandStop'
+                });
+            } else {
+                commands.push({
+                    id: 'play', label: 'SEARCHANYWHERE.commandPlay'
+                });
+            }
         }
 
         return commands;
@@ -876,6 +896,14 @@ class EntitySuggestionData {
 
     roll() {
         this.entity.draw();
+    }
+
+    play() {
+        this.entity.playAll();
+    }
+
+    stop() {
+        this.entity.stopAll();
     }
 
     _formatReference() {
