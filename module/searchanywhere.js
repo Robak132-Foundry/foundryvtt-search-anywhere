@@ -1,4 +1,3 @@
-
 // Global Variables
 
 const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro', 'Playlist'];
@@ -187,7 +186,7 @@ Hooks.on("closeRollTableConfig", (sheet) => {
 
         const addHandler = game.settings.get('searchanywhere', 'settingDragHandler');
         if (addHandler) {
-            let entity = sheet.document.entity;
+            let entity = sheet.document.documentName;
             if (["Actor", "Item", "JournalEntry"].includes(entity)) {
                 sheet.dragHandler = new DragHandler(entity, sheet, html);
             }
