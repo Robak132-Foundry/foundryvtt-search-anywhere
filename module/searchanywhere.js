@@ -1,4 +1,3 @@
-
 // Global Variables
 
 const SEARCHABLE_ENTITY_TYPES = ['Actor','Item','JournalEntry','RollTable', 'Scene', 'Macro', 'Playlist'];
