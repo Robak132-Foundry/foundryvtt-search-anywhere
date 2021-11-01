@@ -187,7 +187,7 @@ Hooks.on("closeRollTableConfig", (sheet) => {
 
         const addHandler = game.settings.get('searchanywhere', 'settingDragHandler');
         if (addHandler) {
-            let entity = sheet.document.entity;
+            let entity = sheet.document.documentName;
             if (["Actor", "Item", "JournalEntry"].includes(entity)) {
                 sheet.dragHandler = new DragHandler(entity, sheet, html);
             }
@@ -458,7 +458,8 @@ class AutoCompletionField {
                 id: "data",
                 field: [
                     "value",
-                    "content"
+                    "content",
+                    "originalName"
                 ],
                 tag: "entityType"
             }
@@ -617,7 +618,7 @@ class AutoCompletionField {
                 )
 
                 let suggestions = entities
-                    .filter(entity => !this._excluded(entity))
+                    .filter(entity => !this._excluded(entity) && entity.visible)
                     .map(entity => new EntitySuggestionData(entity));
 
                 indexes.forEach((index, idx) => {
@@ -769,7 +770,7 @@ class SearchState {
     lookup(query, done) {
         done({
             suggestions: this.field.index.search(query, {
-                field: ["value", "content"],
+                field: ["value", "content", "originalName"],
                 where: this.field.filter ? this.field.filter : undefined
 
             }).filter(suggestion => suggestion.allowed())
@@ -1223,6 +1224,10 @@ class CompendiumSuggestionData {
 
     get value() {
         return this.entry.name;
+    }
+
+    get originalName() {
+        return this.entry.originalName;
     }
 
     get data() {
