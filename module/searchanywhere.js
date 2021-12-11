@@ -14,13 +14,34 @@ const SUGGESTION_ICON_TYPES = {
 };
 
 const SUGGESTION_KEYMAP_TYPES = {
-    "Actor": 'Ctrl + t',
-    "Item": 'Ctrl + i',
-    "Scene": 'Ctrl + e',
-    "JournalEntry": 'Ctrl + j',
-    "RollTable": 'Ctrl + r',
-    "Macro": 'Ctrl + m',
-    "Playlist": 'Ctrl + p'
+    "Actor": [{
+        key: "t",
+        modifiers: [ "CONTROL" ]
+    }],
+    "Item": [{
+        key: "i",
+        modifiers: [ "CONTROL" ]
+    }],
+    "Scene": [{
+        key: "e",
+        modifiers: [ "CONTROL" ]
+    }],
+    "JournalEntry": [{
+        key: "j",
+        modifiers: [ "CONTROL" ]
+    }],
+    "RollTable": [{
+        key: "r",
+        modifiers: [ "CONTROL" ]
+    }],
+    "Macro": [{
+        key: "m",
+        modifiers: [ "CONTROL" ]
+    }],
+    "Playlist": [{
+        key: "p",
+        modifiers: [ "CONTROL" ]
+    }]
 };
 
 /* -------------------------------------------- */
@@ -32,32 +53,12 @@ const SUGGESTION_KEYMAP_TYPES = {
  */
 Hooks.once('init', () => {
 
-    game.settings.register('searchanywhere', 'settingKey', {
-      name: 'SEARCHANYWHERE.searchKeymap',
-      hint: 'SEARCHANYWHERE.searchKeymapHint',
-      type: window.Azzu.SettingsTypes.KeyBinding,
-      default: 'Ctrl +  ',
-      scope: 'client',
-      config: true
-    });
-
-    SEARCHABLE_ENTITY_TYPES.forEach(type => {
-      game.settings.register('searchanywhere', `setting${type}Key`, {
-          name: `SEARCHANYWHERE.search${type}Keymap`,
-          hint: `SEARCHANYWHERE.search${type}KeymapHint`,
-          type: window.Azzu.SettingsTypes.KeyBinding,
-          default: SUGGESTION_KEYMAP_TYPES[type],
-          scope: 'client',
-          config: true
-      });
-    });
-
     game.settings.register('searchanywhere', 'settingImage', {
       name: 'SEARCHANYWHERE.image',
       hint: 'SEARCHANYWHERE.imageHint',
       type: Boolean,
       default: true,
-      scope: 'client',
+      scope: 'world',
       config: true
     });
 
@@ -124,6 +125,43 @@ Hooks.once('init', () => {
         }
     });
 
+    const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
+    if(hideShowForPlayers && !new User(game.data.users.find(user => user._id === game.data.userId)).isGM) {
+        return;
+    }
+
+    game.keybindings.register('searchanywhere', 'settingKey', {
+        name: game.i18n.localize('SEARCHANYWHERE.searchKeymap'),
+        editable: [{
+            key: "SPACE",
+            modifiers: [ "CONTROL" ]
+        }],
+        reservedModifiers: [ "SHIFT" ],
+        onDown: (context) => {
+            const cmd = game.settings.get('searchanywhere', 'settingCommand');
+            game.searchAnywhere.show(
+                game.i18n.localize('SEARCHANYWHERE.searchHint'),
+                cmd === 'always' || (cmd === 'onShift' && context.isShift)
+            )
+        },
+    });
+
+    SEARCHABLE_ENTITY_TYPES.forEach(type => {
+        game.keybindings.register('searchanywhere', `setting${type}Key`, {
+            name: game.i18n.localize(`SEARCHANYWHERE.search${type}Keymap`),
+            editable: SUGGESTION_KEYMAP_TYPES[type],
+            reservedModifiers: [ "SHIFT" ],
+            onDown: (context) => {
+                const cmd = game.settings.get('searchanywhere', 'settingCommand');
+                game.searchAnywhere.show(
+                    game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
+                    cmd === 'always' || (cmd === 'onShift' && context.isShift),
+                    {"entityType": type }
+                )
+            },
+        });
+    });
+
     const searchField = new AutoCompletionField();
     game.searchAnywhere = searchField;
 
@@ -132,76 +170,60 @@ Hooks.once('init', () => {
             searchField.hide();
         }
     };
-});
-
-/* -------------------------------------------- */
-
-/**
- * Synchronize the currently opened character sheets
- */
-Hooks.on("renderActorSheet", (sheet, html, data) => {
-
-    const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-    if(hideShowForPlayers && !game.user.isGM) {
-      return;
-    }
-
-    game.searchAnywhere.openedSheets.set(sheet.appId, sheet);
-});
-
-/**
- * Synchronize the currently closed character sheets
- */
-Hooks.on("closeActorSheet", (sheet) => {
-    game.searchAnywhere.openedSheets.delete(sheet.appId);
-});
-
-/**
- * Synchronize the currently opened roll tables
- */
-Hooks.on("renderRollTableConfig", (sheet) => {
-    game.searchAnywhere.openedTables.set(sheet.appId, sheet);
-});
-
-/**
- * Synchronize the currently closed roll tables
- */
-Hooks.on("closeRollTableConfig", (sheet) => {
-    game.searchAnywhere.openedTables.delete(sheet.appId);
-});
-
-/* -------------------------------------------- */
-
-["Actor", "Item", "Journal"].forEach(entry => {
 
     /**
-     * Adds a Drag & Drop handler for entity sheets
+     * Synchronize the currently opened character sheets
      */
-    Hooks.on(`render${entry}Sheet`, (sheet, html, data) => {
+    Hooks.on("renderActorSheet", (sheet, html, data) => {
+        game.searchAnywhere.openedSheets.set(sheet.appId, sheet);
+    });
 
-        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-        if(hideShowForPlayers && !game.user.isGM) {
-            return;
-        }
+    /**
+     * Synchronize the currently closed character sheets
+     */
+    Hooks.on("closeActorSheet", (sheet) => {
+        game.searchAnywhere.openedSheets.delete(sheet.appId);
+    });
 
-        const addHandler = game.settings.get('searchanywhere', 'settingDragHandler');
-        if (addHandler) {
-            let entity = sheet.document.documentName;
-            if (["Actor", "Item", "JournalEntry"].includes(entity)) {
-                sheet.dragHandler = new DragHandler(entity, sheet, html);
+    /**
+     * Synchronize the currently opened roll tables
+     */
+    Hooks.on("renderRollTableConfig", (sheet) => {
+        game.searchAnywhere.openedTables.set(sheet.appId, sheet);
+    });
+
+    /**
+     * Synchronize the currently closed roll tables
+     */
+    Hooks.on("closeRollTableConfig", (sheet) => {
+        game.searchAnywhere.openedTables.delete(sheet.appId);
+    });
+
+    /* -------------------------------------------- */
+
+    ["Actor", "Item", "Journal"].forEach(entry => {
+
+        /**
+         * Adds a Drag & Drop handler for entity sheets
+         */
+        Hooks.on(`render${entry}Sheet`, (sheet, html, data) => {
+            const addHandler = game.settings.get('searchanywhere', 'settingDragHandler');
+            if (addHandler) {
+                let entity = sheet.document.documentName;
+                if (["Actor", "Item", "JournalEntry"].includes(entity)) {
+                    sheet.dragHandler = new DragHandler(entity, sheet, html);
+                }
             }
-        }
-    });
+        });
 
-    /**
-     * Removes the Drag & Drop handler, if present
-     */
-    Hooks.on(`close${entry}Sheet`, (sheet) => {
-        sheet.dragHandler?.dispose();
+        /**
+         * Removes the Drag & Drop handler, if present
+         */
+        Hooks.on(`close${entry}Sheet`, (sheet) => {
+            sheet.dragHandler?.dispose();
+        });
     });
 });
-
-/* -------------------------------------------- */
 
 /**
  * Adds 'Toggle Searching' to the compendium directory context menu
@@ -235,6 +257,11 @@ Hooks.on("getCompendiumDirectoryEntryContext", (html, entryOptions) => {
  * Adds an excluded search icon indicator to the compendium item.
  */
 Hooks.on("renderCompendiumDirectory", (dir, html) => {
+
+    if(!game.user.isGM) {
+        return;
+    }
+
     let excludedPacks = game.settings.get('searchanywhere', 'excludedPacks');
     html.find("li.compendium-pack").each(function () {
         const pack = $(this).data("pack");
@@ -279,6 +306,11 @@ Hooks.on("getSidebarDirectoryFolderContext", (html, entryOptions) => {
  * Adds an excluded search icon indicator to the compendium item.
  */
 Hooks.on("renderSidebarDirectory", (dir, html) => {
+
+    if(!game.user.isGM) {
+        return;
+    }
+
     const excludedFolders = game.settings.get('searchanywhere', 'excludedFolders');
     html.find("li.directory-item").each(function () {
         const folderId = $(this)[0].dataset.folderId;
@@ -407,7 +439,7 @@ class DragHandler {
           let toTransfer = {
               type: this.type,
               pack: app.document.pack,
-              id: app.document._id
+              id: app.document.id
           };
           evt.dataTransfer.setData("text/plain", JSON.stringify(toTransfer));
       }, false);
@@ -521,75 +553,38 @@ class AutoCompletionField {
     }
 
     _bindKeyEvents() {
-        let onKeyEvent = this._onKeyEvent.bind(this);
-        document.onkeydown = onKeyEvent;
+        document.onkeydown = this._handleCommandDispose.bind(this);
+        let onEditorKeyEvent = this._handleEditorEvent.bind(this);
         tinymce.PluginManager.add("searchanywhere", function (editor) {
             editor.on("keydown", function (evt) {
-                onKeyEvent(evt);
+                onEditorKeyEvent(evt);
                 game.searchAnywhere.editor = editor;
             }.bind(this));
         });
         CONFIG.TinyMCE.plugins = CONFIG.TinyMCE.plugins + " searchanywhere";
     }
 
-    _onKeyEvent(evt) {
-
-        const hideShowForPlayers = game.settings.get('searchanywhere', 'settingPlayers');
-        if(hideShowForPlayers && !game.user.isGM) {
-            return;
-        }
-
-        const KeyBinding = window.Azzu.SettingsTypes.KeyBinding;
-        const cmd = game.settings.get('searchanywhere', 'settingCommand');
-
+    _handleCommandDispose(evt) {
         if (evt.key === "Escape" && (this.visible || CommandMenu.visible)) {
+            evt.preventDefault();
             evt.stopPropagation();
             this.hide();
             CommandMenu.dispose();
-            return;
         }
+    }
 
-        let stringValue = game.settings.get('searchanywhere', 'settingKey');
-        if (stringValue.endsWith("+")) {
-            stringValue = stringValue + "  ";
-        }
+    _handleEditorEvent(evt) {
 
-        const parsedValue = KeyBinding.parse(stringValue);
-        const withShift = KeyBinding.parse('Shift + ' + stringValue);
-        const bind = KeyBinding.eventIsForBinding(evt, parsedValue);
-        const bindWithShift = KeyBinding.eventIsForBinding(evt, withShift);
+        const context = KeyboardManager.getKeyboardEventContext(evt);
+        let possibleMatches = game.keybindings.activeKeys.get(context.key) || [];
+        const matches = possibleMatches.filter(action =>
+            action.action.startsWith("searchanywhere") && KeyboardManager._testContext(action, context));
 
-        if (bind || (cmd === 'onShift' && bindWithShift)) {
+        if(matches.length === 1) {
+            KeyboardManager._executeKeybind(matches[0], context);
+            evt.preventDefault();
             evt.stopPropagation();
-            this.show(
-                game.i18n.localize(`SEARCHANYWHERE.searchHint`),
-                cmd === 'always' || (cmd === 'onShift' && bindWithShift)
-            );
-            return;
         }
-
-        SEARCHABLE_ENTITY_TYPES.forEach(type => {
-            let stringTypeValue = game.settings.get('searchanywhere', `setting${type}Key`);
-            if (stringTypeValue.endsWith("+")) {
-                stringTypeValue = stringTypeValue + "  ";
-            }
-
-            const parsedTypeValue = KeyBinding.parse(stringTypeValue);
-            const withShiftType = KeyBinding.parse('Shift + ' + stringTypeValue);
-
-            const bindType = KeyBinding.eventIsForBinding(evt, parsedTypeValue);
-            const bindTypeWithShift = KeyBinding.eventIsForBinding(evt, withShiftType);
-
-            if (bindType || (cmd === 'onShift' && bindTypeWithShift)) {
-                evt.stopPropagation();
-                this.show(
-                    game.i18n.localize(`SEARCHANYWHERE.search${type}Hint`),
-                    cmd === 'always' || (cmd === 'onShift' && bindTypeWithShift),
-                    {"entityType": type }
-                );
-                return false;
-            }
-        });
     }
 
     /**
@@ -677,6 +672,8 @@ class AutoCompletionField {
      * Show the search field.
      */
     show(hint, openCmd, filter) {
+
+        canvas.activeLayer.releaseAll();
 
         let _show = () => {
             this.modal.style.display = "block";
@@ -947,14 +944,17 @@ class CommandMenu {
 
     _onKeyDown(evt) {
         if(evt.which === 40) {
+            evt.preventDefault();
             evt.stopPropagation();
             this._onDownArrow();
         }
         if(evt.which === 38) {
+            evt.preventDefault();
             evt.stopPropagation();
             this._onUpArrow();
         }
         if(evt.key === "Enter") {
+            evt.preventDefault();
             evt.stopPropagation();
             this._onSelect();
         }

@@ -22,6 +22,12 @@ Currently supports searchs over:
 *  Compendium
 *  Playlists
 
+## From version 2.3.0
+From version 2.3.0 SA works only with Foundry 9 (users who are still using older versions of Foundry can continue to use 2.2.1 which will remain available)
+and take advantage of Foundry's native functionality for configuring keybings:
+
+![Preview](/keybindings.png?raw=true)
+
 ## From version 2.2.0:
 
 **New contextual actions in the command menu**   
@@ -103,13 +109,9 @@ NEW: From version 2.2.0 it is possible to disable this function from the module 
 
 To install, follow these instructions:
 
-1.  Inside Foundry, select the Game Modules tab in the Configuration and Setup menu.
-2.  Click the Install Module button and enter the following URL: https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json
+1.  Inside Foundry, select the Add-On Modules tab in the Configuration and Setup menu and click Install Module.
+2.  Search the module in the package list or enter the following URL: https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json
 3.  Click Install and wait for installation to complete
-
-## Compatibility
-
-Tested on 0.3.9 version.
 
 ## Feedback
 
