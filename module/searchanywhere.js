@@ -13,37 +13,6 @@ const SUGGESTION_ICON_TYPES = {
     "Playlist": 'fas fa-music'
 };
 
-const SUGGESTION_KEYMAP_TYPES = {
-    "Actor": [{
-        key: "t",
-        modifiers: [ "CONTROL" ]
-    }],
-    "Item": [{
-        key: "i",
-        modifiers: [ "CONTROL" ]
-    }],
-    "Scene": [{
-        key: "e",
-        modifiers: [ "CONTROL" ]
-    }],
-    "JournalEntry": [{
-        key: "j",
-        modifiers: [ "CONTROL" ]
-    }],
-    "RollTable": [{
-        key: "r",
-        modifiers: [ "CONTROL" ]
-    }],
-    "Macro": [{
-        key: "m",
-        modifiers: [ "CONTROL" ]
-    }],
-    "Playlist": [{
-        key: "p",
-        modifiers: [ "CONTROL" ]
-    }]
-};
-
 /* -------------------------------------------- */
 /*  Hooks                                       */
 /* -------------------------------------------- */
@@ -130,13 +99,46 @@ Hooks.once('init', () => {
         return;
     }
 
+    const {SHIFT, CONTROL} = KeyboardManager.MODIFIER_KEYS;
+
+    const SUGGESTION_KEYMAP_TYPES = {
+        "Actor": [{
+            key: "KeyT",
+            modifiers: [CONTROL]
+        }],
+        "Item": [{
+            key: "KeyI",
+            modifiers: [CONTROL]
+        }],
+        "Scene": [{
+            key: "KeyE",
+            modifiers: [CONTROL]
+        }],
+        "JournalEntry": [{
+            key: "KeyJ",
+            modifiers: [CONTROL]
+        }],
+        "RollTable": [{
+            key: "KeyR",
+            modifiers: [CONTROL]
+        }],
+        "Macro": [{
+            key: "KeyM",
+            modifiers: [CONTROL]
+        }],
+        "Playlist": [{
+            key: "KeyP",
+            modifiers: [CONTROL]
+        }]
+    };
+
     game.keybindings.register('searchanywhere', 'settingKey', {
         name: game.i18n.localize('SEARCHANYWHERE.searchKeymap'),
         editable: [{
-            key: "SPACE",
-            modifiers: [ "CONTROL" ]
+            key: "Space",
+            modifiers: [CONTROL]
         }],
-        reservedModifiers: [ "SHIFT" ],
+        reservedModifiers: [SHIFT],
         onDown: (context) => {
             const cmd = game.settings.get('searchanywhere', 'settingCommand');
             game.searchAnywhere.show(
@@ -150,7 +152,7 @@ Hooks.once('init', () => {
         game.keybindings.register('searchanywhere', `setting${type}Key`, {
             name: game.i18n.localize(`SEARCHANYWHERE.search${type}Keymap`),
             editable: SUGGESTION_KEYMAP_TYPES[type],
-            reservedModifiers: [ "SHIFT" ],
+            reservedModifiers: [SHIFT],
             onDown: (context) => {
                 const cmd = game.settings.get('searchanywhere', 'settingCommand');
                 game.searchAnywhere.show(
@@ -673,7 +675,7 @@ class AutoCompletionField {
      */
     show(hint, openCmd, filter) {
 
-        canvas.activeLayer.releaseAll();
+        canvas.activeLayer?.releaseAll();
 
         let _show = () => {
             this.modal.style.display = "block";
