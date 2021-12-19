@@ -1373,7 +1373,7 @@ class CompendiumSuggestionData {
     }
 
     execute() {
-        this.pack.getEntity(this.entry._id)
+        this.pack.getDocument(this.entry._id)
             .then(entity => {
                 entity.execute();
             })
@@ -1383,7 +1383,7 @@ class CompendiumSuggestionData {
     }
 
     roll() {
-        this.pack.getEntity(this.entry._id)
+        this.pack.getDocument(this.entry._id)
             .then(entity => {
                 entity.draw();
             })
@@ -1393,9 +1393,9 @@ class CompendiumSuggestionData {
     }
 
     import() {
-        this.pack.getEntity(this.entry._id)
+        this.pack.getDocument(this.entry._id)
             .then(entity => {
-                entity.collection.importFromCompendium(this.pack, entity._id);
+                entity.collection.importFromCompendium(this.pack, entity.id);
             })
             .catch(err => {
                 console.error(`Unable roll compendium table: ${err}`);

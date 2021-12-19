@@ -2,7 +2,7 @@
 	"name": "searchanywhere",
 	"title": "Search Anywhere",
 	"description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
-	"version": "2.3.1",
+	"version": "2.3.2",
 	"minimumCoreVersion" : "9",
 	"compatibleCoreVersion" : "9",
 	"author": "Simone",
@@ -30,5 +30,5 @@
 	}],
 	"url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
 	"manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
-	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/2.3.1/raw/search-anywhere.zip?job=build"
+	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/2.3.2/raw/search-anywhere.zip?job=build"
 }
