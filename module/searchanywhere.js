@@ -1075,7 +1075,7 @@ class EntitySuggestionData {
 
         game.searchAnywhere.openedTables.forEach((value, key) => {
             commands.push({
-                id: `toTable:${key}`, label: `SEARCHANYWHERE.commandToTable:${value.entity.name}`
+                id: `toTable:${key}`, label: `SEARCHANYWHERE.commandToTable:${value.document.name}`
             })
         });
 
