@@ -72,6 +72,18 @@ Hooks.once('init', () => {
         config: true
     });*/
 
+    game.settings.register('searchanywhere', 'settingDiacritics', {
+        name: 'SEARCHANYWHERE.diacritics',
+        hint: 'SEARCHANYWHERE.diacriticsHint',
+        type: Boolean,
+        default: true,
+        scope: 'world',
+        config: true,
+        onChange: () => {
+            game.searchAnywhere.clearIndex();
+        }
+    });
+
     game.settings.register('searchanywhere', 'excludedPacks', {
         type: Array,
         default: [],
@@ -716,6 +728,10 @@ class AutoCompletionField {
             clearTimeout(this.buffer);
         }
 
+        if (!game.settings.get('searchanywhere', 'settingDiacritics')) {
+            query = query.normalize('NFKD').replace(/[\u0300-\u036F]/g, '');
+        }
+
         let doLookup = () => {
             this.state = this._whichState(query);
             this.state.lookup(query, done);
@@ -782,7 +798,7 @@ class SearchState {
      * @returns {string}
      */
     formatResult(suggestion, value) {
-        let text = suggestion.value;
+        let text = suggestion.name;
         let icon = suggestion.icon;
         let image = suggestion.image;
         let entityType = game.i18n.localize(`SEARCHANYWHERE.desc${suggestion.entityType}`);
@@ -1224,6 +1240,10 @@ class CompendiumSuggestionData {
     }
 
     get value() {
+        return game.settings.get('searchanywhere', 'settingDiacritics') ? this.entry.name : this.entry.name.normalize('NFKD').replace(/[\u0300-\u036F]/g, '');
+    }
+
+    get name() {
         return this.entry.name;
     }
 
