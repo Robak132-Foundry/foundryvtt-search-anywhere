@@ -60,6 +60,8 @@
     "SEARCHANYWHERE.waitMessage": "Creazione indici di ricerca in corso, attendere prego...",
     "SEARCHANYWHERE.showSearchBar": "Mostra barra di ricerca",
     "SEARCHANYWHERE.hideToolbar": "Nascondi i Comandi Toolbar",
-    "SEARCHANYWHERE.hideToolbarHint": "Mon mostrare i comandi per aprire la barra di ricerca nella toolbar della scena"
+    "SEARCHANYWHERE.hideToolbarHint": "Mon mostrare i comandi per aprire la barra di ricerca nella toolbar della scena",
+    "SEARCHANYWHERE.diacritics": "Cerca Segni Diacritici",
+    "SEARCHANYWHERE.diacriticsHint": "La ricerca dovrebbe tenere conto dei segni diacritici"
 
 }
