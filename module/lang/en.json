@@ -60,5 +60,7 @@
     "SEARCHANYWHERE.waitMessage": "Building search indexes in progress, please wait...",
     "SEARCHANYWHERE.showSearchBar": "Show search bar",
     "SEARCHANYWHERE.hideToolbar": "Hide Commands in Toolbar",
-    "SEARCHANYWHERE.hideToolbarHint": "Do not display the button commands to open the search bar in the scene toolbar"
+    "SEARCHANYWHERE.hideToolbarHint": "Do not display the button commands to open the search bar in the scene toolbar",
+    "SEARCHANYWHERE.diacritics": "Match Diacritics",
+    "SEARCHANYWHERE.diacriticsHint": "Searching should take diacritic marks into account"
 }
