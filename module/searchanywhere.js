@@ -1031,6 +1031,10 @@ class EntitySuggestionData {
         return this.entity.name;
     }
 
+    get name() {
+        return this.entity.name;
+    }
+
     get data() {
         return this.entity.id;
     }
