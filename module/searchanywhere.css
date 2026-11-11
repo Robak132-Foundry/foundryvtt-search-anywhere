@@ -1,3 +1,7 @@
+#search-anywhere-autocomplete,
+.autocomplete-suggestion {
+  color: #111111
+}
 
 .loader-overlay {
   position: fixed;

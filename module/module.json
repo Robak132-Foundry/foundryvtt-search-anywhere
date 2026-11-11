@@ -1,34 +1,41 @@
 {
-	"name": "searchanywhere",
-	"title": "Search Anywhere",
-	"description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
-	"version": "2.3.6",
-	"minimumCoreVersion" : "9",
-	"compatibleCoreVersion" : "9",
-	"author": "Simone",
-	"dependencies": [],
-	"scripts": [
-		"./libs/flexsearch.min.js",
-		"./libs/jquery.autocomplete.js",
-		"./searchanywhere.js"
-	],
-	"styles": [
-		"./searchanywhere.css"
-	],
-	"languages": [{
-		"lang": "en",
-		"name": "English",
-		"path": "./lang/en.json"
-	}, {
-		"lang": "it",
-		"name": "Italian",
-		"path": "./lang/it.json"
-	}, {
-		"lang": "de",
-		"name": "Deutsch",
-		"path": "./lang/de.json"
-	}],
-	"url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
-	"manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
-	"download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/2.3.6/raw/search-anywhere.zip?job=build"
+  "id": "searchanywhere",
+  "title": "Search Anywhere",
+  "description": "Adds a way to quickly search for any entity by name via a handy auto-complete widget",
+  "version": "2.4.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "scripts": [
+    "libs/flexsearch.min.js",
+    "libs/jquery.autocomplete.js",
+    "searchanywhere.js"
+  ],
+  "styles": [
+    "searchanywhere.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json",
+      "flags": {}
+    },
+    {
+      "lang": "it",
+      "name": "Italian",
+      "path": "lang/it.json",
+      "flags": {}
+    },
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "lang/de.json",
+      "flags": {}
+    }
+  ],
+  "url": "https://gitlab.com/riccisi/foundryvtt-search-anywhere",
+  "manifest": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/raw/master/module/module.json",
+  "download": "https://gitlab.com/riccisi/foundryvtt-search-anywhere/-/jobs/artifacts/2.3.6/raw/search-anywhere.zip?job=build"
 }
